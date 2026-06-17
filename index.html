@@ -1328,25 +1328,63 @@
       });
     }
 
+    // Canvas Compression step for Sub-Row ingredient barcode/macro labels
     function handleRowLabelIngestion(file, idx) {
       var reader = new FileReader();
       reader.onload = function(e) { 
-        recipeRows[idx].labelImage = e.target.result.split(',')[1]; 
-        activeCalculatedResult = null;
-        document.getElementById('mainActionBtn').innerText = "Calculate Macros";
-        renderIngredientRows(); 
+        var img = new Image();
+        img.onload = function() {
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          var MAX_WIDTH = 1200, MAX_HEIGHT = 1200;
+          var width = img.width, height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+          }
+          canvas.width = width; canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          recipeRows[idx].labelImage = canvas.toDataURL('image/jpeg', 0.7).split(',')[1]; 
+          activeCalculatedResult = null;
+          document.getElementById('mainActionBtn').innerText = "Calculate Macros";
+          renderIngredientRows(); 
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
+    // Canvas Compression step for primary food setups
     function handleImageInbound(file) {
       var reader = new FileReader();
       reader.onload = function(e) {
-        base64ImagePayload = e.target.result.split(',')[1];
-        document.getElementById('imagePreview').src = e.target.result;
-        document.getElementById('imagePreviewContainer').classList.remove('hidden');
-        activeCalculatedResult = null;
-        document.getElementById('mainActionBtn').innerText = "Calculate Macros";
+        var img = new Image();
+        img.onload = function() {
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          var MAX_WIDTH = 1200, MAX_HEIGHT = 1200;
+          var width = img.width, height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+          }
+          canvas.width = width; canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          var processedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          base64ImagePayload = processedBase64.split(',')[1];
+          
+          document.getElementById('imagePreview').src = processedBase64;
+          document.getElementById('imagePreviewContainer').classList.remove('hidden');
+          activeCalculatedResult = null;
+          document.getElementById('mainActionBtn').innerText = "Calculate Macros";
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -1401,9 +1439,30 @@
 
       if(currentActiveEngine === "groq") {
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://api.groq.com/openai/v1/chat/completions", true);
+        // CORS proxy wrapper added to prevent browser requests from being blocked out of the local client environment
+        xhr.open("POST", "https://corsproxy.io/?https://api.groq.com/openai/v1/chat/completions", true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Authorization", "Bearer " + liveContextKey);
+        
+        // Build multimodal complex object syntax block
+        var contentPayload = [{ type: "text", text: finalPromptText }];
+        
+        if (base64ImagePayload) {
+          contentPayload.push({
+            type: "image_url",
+            image_url: { url: "data:image/jpeg;base64," + base64ImagePayload }
+          });
+        }
+        
+        recipeRows.forEach(function(row) {
+          if (row.labelImage) {
+            contentPayload.push({
+              type: "image_url",
+              image_url: { url: "data:image/jpeg;base64," + row.labelImage }
+            });
+          }
+        });
+
         xhr.onreadystatechange = function() {
           if(xhr.readyState === 4) {
             overlay.classList.add('hidden');
@@ -1413,13 +1472,14 @@
                 var text = responseJson.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
                 applyCalculatedJSONPayload(JSON.parse(text));
               } catch(e) { alert("Failed to interpret cloud schema: " + e.message); }
-            } else { alert("Groq Processing Error. Verify your API key limits and status codes."); }
+            } else { alert("Groq Multimodal Error. Code Status: " + xhr.status + ". Ensure your key balances are active."); }
           }
         };
         xhr.send(JSON.stringify({
-          model: "llama-3.3-70b-specdec",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct", // Flagship text + vision alternative fallback engine
           response_format: { type: "json_object" },
-          messages: [{ role: "user", content: finalPromptText }]
+          temperature: 0.1,
+          messages: [{ role: "user", content: contentPayload }]
         }));
       } else {
         var gemUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + liveContextKey;
