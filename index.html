@@ -1052,12 +1052,14 @@
       </div>
       <input type="range" id="goalRange" min="1000" max="3500" step="50" value="1800" class="range-slider" style="margin-bottom: 14px;">
 
+      <!-- MULTI-PROVIDER AI SETTINGS ENGINE PANELS -->
       <div style="background-color: rgba(2,6,23,0.4); border: 1px solid #1e293b; padding: 12px; border-radius: 16px;">
         <div class="provider-toggle-container">
           <button id="toggleGeminiBtn" class="provider-btn active">Gemini AI</button>
           <button id="toggleGroqBtn" class="provider-btn">Groq AI</button>
         </div>
 
+        <!-- Gemini Input Wrapper -->
         <div id="geminiFieldGroup">
           <div class="goal-flex-text" style="margin-bottom: 4px;">
             <label class="goal-input-header" style="color: #94a3b8;">Gemini API Key</label>
@@ -1066,6 +1068,7 @@
           <input type="text" id="apiKeyInput" placeholder="AI Studio Key (AIzaSy...)" class="text-input-field" style="padding: 6px 10px; font-size: 11px; font-family: monospace; border-radius: 8px;">
         </div>
 
+        <!-- Groq Input Wrapper -->
         <div id="groqFieldGroup" class="hidden">
           <div class="goal-flex-text" style="margin-bottom: 4px;">
             <label class="goal-input-header" style="color: #94a3b8;">Groq API Key</label>
@@ -1118,7 +1121,7 @@
               <input type="file" id="cameraFileInput" accept="image/*" capture="environment" class="hidden">
             </label>
             <label class="photo-label-trigger">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 00...1.5 1.5z" /></svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5z" /></svg>
               Upload Image
               <input type="file" id="uploadFileInput" accept="image/*" class="hidden">
             </label>
@@ -1696,7 +1699,8 @@
                 var res = JSON.parse(xhr.responseText);
                 var rawText = res.candidates[0].content.parts[0].text;
                 // Clean markdown code blocks if the model wrapped it
-                var cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+                var cleanJson = rawText.replace(/```json/g, "").replace(/
+```/g, "").trim();
                 handleSuccessfulAiResponse(JSON.parse(cleanJson));
               } catch (e) { alert("Error parsing Gemini layout profile: " + e.message); }
             } else { alert("Gemini Engine rejected the request. Check your key status."); }
