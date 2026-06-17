@@ -540,7 +540,7 @@
       height: 16px;
     }
 
-    /* Modal System Layout (Fully Scoped) */
+    /* Modal System Layout */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -1052,14 +1052,12 @@
       </div>
       <input type="range" id="goalRange" min="1000" max="3500" step="50" value="1800" class="range-slider" style="margin-bottom: 14px;">
 
-      <!-- MULTI-PROVIDER AI SETTINGS ENGINE PANELS -->
       <div style="background-color: rgba(2,6,23,0.4); border: 1px solid #1e293b; padding: 12px; border-radius: 16px;">
         <div class="provider-toggle-container">
           <button id="toggleGeminiBtn" class="provider-btn active">Gemini AI</button>
           <button id="toggleGroqBtn" class="provider-btn">Groq AI</button>
         </div>
 
-        <!-- Gemini Input Wrapper -->
         <div id="geminiFieldGroup">
           <div class="goal-flex-text" style="margin-bottom: 4px;">
             <label class="goal-input-header" style="color: #94a3b8;">Gemini API Key</label>
@@ -1068,7 +1066,6 @@
           <input type="text" id="apiKeyInput" placeholder="AI Studio Key (AIzaSy...)" class="text-input-field" style="padding: 6px 10px; font-size: 11px; font-family: monospace; border-radius: 8px;">
         </div>
 
-        <!-- Groq Input Wrapper -->
         <div id="groqFieldGroup" class="hidden">
           <div class="goal-flex-text" style="margin-bottom: 4px;">
             <label class="goal-input-header" style="color: #94a3b8;">Groq API Key</label>
@@ -1121,7 +1118,7 @@
               <input type="file" id="cameraFileInput" accept="image/*" capture="environment" class="hidden">
             </label>
             <label class="photo-label-trigger">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5z" /></svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5" /></svg>
               Upload Image
               <input type="file" id="uploadFileInput" accept="image/*" class="hidden">
             </label>
@@ -1163,9 +1160,11 @@
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button id="cancelAddModalBtn" class="btn-modal-cancel">Cancel</button>
-        <button id="mainActionBtn" class="btn-modal-submit">Calculate Macros</button>
+      <div class="modal-header" style="border-top: 1px solid rgba(30, 41, 59, 0.6); border-bottom: none;">
+        <div class="modal-footer" style="width: 100%; padding: 0; border: none;">
+          <button id="cancelAddModalBtn" class="btn-modal-cancel">Cancel</button>
+          <button id="mainActionBtn" class="btn-modal-submit">Calculate Macros</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1191,8 +1190,6 @@
     var activeCalculatedResult = null;
     var base64ImagePayload = null;
     var editingMealId = null; 
-    
-    // Active pipeline router config variable
     var selectedProvider = "gemini"; 
 
     function getLocalDateString(dateObj) {
@@ -1206,49 +1203,52 @@
       var groKey = (localStorage.getItem("groq_api_key") || "").trim();
 
       var gemBadge = document.getElementById('geminiStateBadge');
-      if (gemKey.length >= 10) {
-        gemBadge.innerText = "✓ Loaded";
-        gemBadge.style.color = "#10b981";
-      } else {
-        gemBadge.innerText = "✕ Missing";
-        gemBadge.style.color = "#ef4444";
+      if (gemBadge) {
+        if (gemKey.length >= 10) {
+          gemBadge.innerText = "✓ Loaded";
+          gemBadge.style.color = "#10b981";
+        } else {
+          gemBadge.innerText = "✕ Missing";
+          gemBadge.style.color = "#ef4444";
+        }
       }
 
       var groBadge = document.getElementById('groqStateBadge');
-      if (groKey.length >= 10) {
-        groBadge.innerText = "✓ Loaded";
-        groBadge.style.color = "#10b981";
-      } else {
-        groBadge.innerText = "✕ Missing";
-        groBadge.style.color = "#ef4444";
+      if (groBadge) {
+        if (groKey.length >= 10) {
+          groBadge.innerText = "✓ Loaded";
+          groBadge.style.color = "#10b981";
+        } else {
+          groBadge.innerText = "✕ Missing";
+          groBadge.style.color = "#ef4444";
+        }
       }
     }
 
     function setAIProvider(provider) {
-      selectedProvider = provider;
-      localStorage.setItem("selected_ai_provider", provider);
+      selectedProvider = provider || "gemini";
+      localStorage.setItem("selected_ai_provider", selectedProvider);
       
       var gemBtn = document.getElementById('toggleGeminiBtn');
       var groBtn = document.getElementById('toggleGroqBtn');
       var gemGroup = document.getElementById('geminiFieldGroup');
       var groGroup = document.getElementById('groqFieldGroup');
 
-      if (provider === "gemini") {
-        gemBtn.className = "provider-btn active";
-        groBtn.className = "provider-btn";
-        gemGroup.classList.remove('hidden');
-        groGroup.classList.add('hidden');
+      if (selectedProvider === "gemini") {
+        if (gemBtn) gemBtn.className = "provider-btn active";
+        if (groBtn) groBtn.className = "provider-btn";
+        if (gemGroup) gemGroup.classList.remove('hidden');
+        if (groGroup) groGroup.classList.add('hidden');
       } else {
-        gemBtn.className = "provider-btn";
-        groBtn.className = "provider-btn active";
-        gemGroup.classList.add('hidden');
-        groGroup.classList.remove('hidden');
+        if (gemBtn) gemBtn.className = "provider-btn";
+        if (groBtn) groBtn.className = "provider-btn active";
+        if (gemGroup) gemGroup.classList.add('hidden');
+        if (groGroup) groGroup.classList.remove('hidden');
       }
     }
 
     function initApplication() {
-      loadDateLog(currentSelectedDate);
-      
+      // 1. Setup Event Listeners Safe Attachments
       document.getElementById('prevDateBtn').onclick = function() { navigateDate(-1); };
       document.getElementById('nextDateBtn').onclick = function() { navigateDate(1); };
       document.getElementById('openAddModalBtn').onclick = function() { showAddMealModal(); };
@@ -1259,17 +1259,20 @@
       document.getElementById('openHistoryBtn').onclick = openHistoryModal;
       document.getElementById('closeHistoryModalBtn').onclick = closeHistoryModal;
 
-      document.getElementById('cameraFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
-      document.getElementById('uploadFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
+      document.getElementById('cameraFileInput').onchange = function(e) { if(e.target.files.length) handleImageIngestion(e.target.files[0]); };
+      document.getElementById('uploadFileInput').onchange = function(e) { if(e.target.files.length) handleImageIngestion(e.target.files[0]); };
       document.getElementById('clearImageBtn').onclick = resetImagePreview;
 
-      // Handle Switch Toggles Clicking
       document.getElementById('toggleGeminiBtn').onclick = function() { setAIProvider("gemini"); };
       document.getElementById('toggleGroqBtn').onclick = function() { setAIProvider("groq"); };
 
-      // Load initial stored parameters configuration
-      var currentGeminiKey = (localStorage.getItem("gemini_api_key") || "").trim().replace(/["']/g, "");
-      var currentGroqKey = (localStorage.getItem("groq_api_key") || "").trim().replace(/["']/g, "");
+      // 2. Safe Extraction from Storage without crash vulnerabilities
+      var rawGemini = localStorage.getItem("gemini_api_key") || "";
+      var currentGeminiKey = typeof rawGemini === "string" ? rawGemini.trim().replace(/["']/g, "") : "";
+      
+      var rawGroq = localStorage.getItem("groq_api_key") || "";
+      var currentGroqKey = typeof rawGroq === "string" ? rawGroq.trim().replace(/["']/g, "") : "";
+      
       var savedProvider = localStorage.getItem("selected_ai_provider") || "gemini";
 
       document.getElementById('apiKeyInput').value = currentGeminiKey;
@@ -1281,14 +1284,12 @@
       document.getElementById('apiKeyInput').oninput = function(e) {
         var clean = e.target.value.trim().replace(/["']/g, "");
         localStorage.setItem("gemini_api_key", clean);
-        e.target.value = clean;
         syncKeyStateBadges();
       };
 
       document.getElementById('groqKeyInput').oninput = function(e) {
         var clean = e.target.value.trim().replace(/["']/g, "");
         localStorage.setItem("groq_api_key", clean);
-        e.target.value = clean;
         syncKeyStateBadges();
       };
 
@@ -1298,12 +1299,16 @@
         saveCurrentLog();
         updateDOM();
       };
+      
       document.getElementById('goalRange').oninput = function(e) {
-        calorieGoal = parseInt(e.target.value);
+        calorieGoal = parseInt(e.target.value) || 1800;
         document.getElementById('goalInput').value = calorieGoal;
         saveCurrentLog();
         updateDOM();
       };
+
+      // 3. Kickoff application load state
+      loadDateLog(currentSelectedDate);
     }
 
     function navigateDate(daysOffset) {
@@ -1317,9 +1322,14 @@
     function loadDateLog(dateStr) {
       var backup = localStorage.getItem("nutrition_log_" + dateStr);
       if (backup) {
-        var parsed = JSON.parse(backup);
-        meals = parsed.meals || [];
-        calorieGoal = parsed.calorieGoal || 1800;
+        try {
+          var parsed = JSON.parse(backup);
+          meals = parsed.meals || [];
+          calorieGoal = parsed.calorieGoal || 1800;
+        } catch(e) {
+          meals = [];
+          calorieGoal = 1800;
+        }
       } else {
         meals = [];
       }
@@ -1330,7 +1340,12 @@
 
     function saveCurrentLog() {
       localStorage.setItem("nutrition_log_" + currentSelectedDate, JSON.stringify({ meals: meals, calorieGoal: calorieGoal }));
-      var historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      var historyIdx = [];
+      try {
+        historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      } catch(e) { historyIdx = []; }
+      
+      if (!Array.isArray(historyIdx)) historyIdx = [];
       if (!historyIdx.includes(currentSelectedDate)) {
         historyIdx.push(currentSelectedDate);
         localStorage.setItem('nutrition_history_index', JSON.stringify(historyIdx));
@@ -1358,7 +1373,11 @@
 
       var totCals = 0, totP = 0, totC = 0, totF = 0, totFib = 0;
       meals.forEach(function(m) {
-        totCals += m.calories; totP += m.protein; totC += m.carbs; totF += m.fat; totFib += m.fiber;
+        totCals += (Number(m.calories) || 0); 
+        totP += (Number(m.protein) || 0); 
+        totC += (Number(m.carbs) || 0); 
+        totF += (Number(m.fat) || 0); 
+        totFib += (Number(m.fiber) || 0);
       });
 
       document.getElementById('totalCalories').innerText = Math.round(totCals).toLocaleString();
@@ -1513,6 +1532,9 @@
 
     window.deleteIngredientRow = function(idx) {
       recipeRows.splice(idx, 1);
+      if(recipeRows.length === 0) {
+        recipeRows.push({ name: '', grams: '', labelImage: null });
+      }
       renderIngredientRows();
     };
 
@@ -1530,48 +1552,34 @@
           </button>
           
           <div class="builder-inputs-stack">
-            <input type="text" id="rowName_" value="" placeholder="Ingredient Name (Rice, Chicken, Oats)" class="text-input-field" style="padding: 8px 10px; font-size:12px; margin-bottom: 6px;">
+            <input type="text" id="rowName_${idx}" value="${row.name || ''}" placeholder="Ingredient Name (Rice, Chicken, Oats)" class="text-input-field" style="padding: 8px 10px; font-size:12px; margin-bottom: 6px;">
             <div class="builder-row-split">
               <div class="w-1-3">
-                <input type="number" id="rowGrams_" value="" placeholder="Grams" class="text-input-field" style="padding: 8px 4px; text-align:center; font-size:12px;">
+                <input type="number" id="rowGrams_${idx}" value="${row.grams || ''}" placeholder="Grams" class="text-input-field" style="padding: 8px 4px; text-align:center; font-size:12px;">
               </div>
               <div class="w-2-3">
-                <label class="scan-label-embedded-btn ">
+                <label class="scan-label-embedded-btn ${hasLabel ? 'label-active' : 'label-inactive'}">
                   <svg style="width:12px; height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-width="2"/></svg>
-                  Scan Macro Label
-                  <input type="file" id="rowLabelFile_" accept="image/*" class="hidden">
+                  <span>${hasLabel ? 'Label Attached ✓' : 'Scan Macro Label'}</span>
+                  <input type="file" id="rowLabelFile_${idx}" accept="image/*" class="hidden">
                 </label>
               </div>
             </div>
           </div>
         `;
         
-        d.querySelector('#rowName_').id = "rowName_" + idx;
-        d.querySelector('#rowName_' + idx).value = row.name;
-        
-        d.querySelector('#rowGrams_').id = "rowGrams_" + idx;
-        d.querySelector('#rowGrams_' + idx).value = row.grams;
-        
-        d.querySelector('#rowLabelFile_').id = "rowLabelFile_" + idx;
-        
-        var labelBtn = d.querySelector('.scan-label-embedded-btn');
         if(hasLabel) {
-           labelBtn.className = "scan-label-embedded-btn label-active";
-           labelBtn.innerHTML = labelBtn.innerHTML.replace("Scan Macro Label", "Label Attached ✓");
-           
            var badgeRow = document.createElement('div');
            badgeRow.className = "linked-badge-row";
-           badgeRow.innerHTML = `<span class="linked-status">✓ Nutritional data screenshot active</span><button onclick="window.clearRowLabel(${idx})" class="remove-link-text">Remove</button>`;
+           badgeRow.innerHTML = `<span class="linked-status">✓ Nutritional data screenshot active</span><button onclick="window.clearRowLabel(${idx}); event.preventDefault();" class="remove-link-text">Remove</button>`;
            d.appendChild(badgeRow);
-        } else {
-           labelBtn.className = "scan-label-embedded-btn label-inactive";
         }
 
         container.appendChild(d);
         
         document.getElementById("rowName_" + idx).oninput = function(e) { recipeRows[idx].name = e.target.value; };
         document.getElementById("rowGrams_" + idx).oninput = function(e) { recipeRows[idx].grams = e.target.value; };
-        document.getElementById("rowLabelFile_" + idx).onchange = function(e) { handleRowLabelIngestion(e.target.files[0], idx); };
+        document.getElementById("rowLabelFile_" + idx).onchange = function(e) { if(e.target.files.length) handleRowLabelIngestion(e.target.files[0], idx); };
       });
     }
 
@@ -1641,7 +1649,10 @@
 
       var mealHeadingName = document.getElementById('recipeMealName').value.trim() || "Logged Custom Entry";
       var userRows = recipeRows.filter(function(r) { return r.name.trim() !== ''; });
-      if (userRows.length === 0 && !base64ImagePayload) return;
+      if (userRows.length === 0 && !base64ImagePayload) {
+        alert("Please add at least one ingredient name or attach an image before calculating.");
+        return;
+      }
 
       var overlay = document.getElementById('aiScanningOverlay');
       var loadingTitle = document.getElementById('loadingModalTitle');
@@ -1649,11 +1660,10 @@
       
       overlay.classList.remove('hidden');
 
-      var promptPrompt = "Calculate macro details for the composite recipe: Meal Structural Heading: \"" + mealHeadingName + "\". Input rows parameters: " + JSON.stringify(recipeRows.map(function(r, index) {
+      var promptPrompt = "Calculate macro details for the composite recipe: Meal Structural Heading: \"" + mealHeadingName + "\". Input rows parameters: " + JSON.stringify(userRows.map(function(r, index) {
         return { arrayIndexPosition: index, name: r.name, grams: r.grams || 100 };
       }));
 
-      // JSON formatting schema structure 
       var jsonSchemaString = `{
         "name": "string",
         "calories": integer,
@@ -1668,7 +1678,6 @@
 
       var finalPromptText = "You are an elite nutrition label analyzer and macro parser. Calculate total recipe stats. Always reply back using valid JSON layout fitting this exact structure format:\n" + jsonSchemaString + "\n\nUser request data:\n" + promptPrompt;
 
-      // CORE SYSTEM MULTI-ROUTING INFRASTRUCTURE ENGINE
       if (selectedProvider === "gemini") {
         loadingTitle.innerText = "Gemini AI Engine";
         loadingSub.innerText = "Analyzing parameters via Google cloud gateways...";
@@ -1676,14 +1685,14 @@
         var gemKey = (localStorage.getItem("gemini_api_key") || "").trim();
         if (!gemKey || gemKey.length < 5) {
           overlay.classList.add('hidden');
-          alert("Gemini key is missing inside setup box!");
+          alert("Gemini key is missing inside configuration box!");
           return;
         }
 
         var gemUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gemKey;
         var partsList = [{ text: finalPromptText }];
         
-        recipeRows.forEach(function(row, idx) {
+        recipeRows.forEach(function(row) {
           if (row.labelImage) partsList.push({ inlineData: { mimeType: "image/jpeg", data: row.labelImage } });
         });
         if (base64ImagePayload) partsList.push({ inlineData: { mimeType: "image/jpeg", data: base64ImagePayload } });
@@ -1698,9 +1707,7 @@
               try {
                 var res = JSON.parse(xhr.responseText);
                 var rawText = res.candidates[0].content.parts[0].text;
-                // Clean markdown code blocks if the model wrapped it
-                var cleanJson = rawText.replace(/```json/g, "").replace(/
-```/g, "").trim();
+                var cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
                 handleSuccessfulAiResponse(JSON.parse(cleanJson));
               } catch (e) { alert("Error parsing Gemini layout profile: " + e.message); }
             } else { alert("Gemini Engine rejected the request. Check your key status."); }
@@ -1709,7 +1716,6 @@
         xhr.send(JSON.stringify({ contents: [{ role: "user", parts: partsList }] }));
 
       } else {
-        // Groq AI Request Router System Pipeline
         loadingTitle.innerText = "Groq Llama Engine";
         loadingSub.innerText = "Blazing fast inference calculation compiling...";
 
@@ -1765,7 +1771,12 @@
       var container = document.getElementById('historyListContainer');
       container.innerHTML = '';
       
-      var historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      var historyIdx = [];
+      try {
+        historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      } catch(e) { historyIdx = []; }
+      
+      if(!Array.isArray(historyIdx)) historyIdx = [];
       var todayStr = getLocalDateString(new Date());
       if (!historyIdx.includes(todayStr)) {
         historyIdx.push(todayStr);
@@ -1773,9 +1784,14 @@
       historyIdx.sort(function(a, b) { return b.localeCompare(a); });
 
       historyIdx.forEach(function(dStr) {
-        var data = JSON.parse(localStorage.getItem("nutrition_log_" + dStr) || '{"meals":[]}');
         var dayCals = 0;
-        if (data.meals) data.meals.forEach(function(m) { dayCals += m.calories; });
+        var localLog = localStorage.getItem("nutrition_log_" + dStr);
+        if (localLog) {
+          try {
+            var data = JSON.parse(localLog);
+            if (data.meals) data.meals.forEach(function(m) { dayCals += (Number(m.calories) || 0); });
+          } catch(e){}
+        }
 
         var row = document.createElement('div');
         row.className = "history-item";
@@ -1798,6 +1814,7 @@
       document.getElementById('historyModal').classList.remove('active');
     }
 
+    // Assign window load execution completely free of sequential racing conditions
     window.onload = initApplication;
   </script>
 </body>
