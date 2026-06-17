@@ -1135,15 +1135,7 @@
   </div>
 
   <script>
-    // SECURE LOCAL MEMORY PARSING SEGMENT:
-    // This safely initializes storage without committing hardcoded production keys to public GitHub history loops.
-    if (!localStorage.getItem("gemini_api_key")) {
-      localStorage.setItem("gemini_api_key", "PASTE_YOUR_KEY_HERE");
-    }
-
-    var apiKey = localStorage.getItem("gemini_api_key") || ""; 
-    var apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
-
+    // CLEANED UP SEGMENT: No more auto-overwriting with text like "PASTE_YOUR_KEY_HERE"
     var currentSelectedDate = getLocalDateString(new Date());
     var meals = [];
     var calorieGoal = 1800;
@@ -1176,13 +1168,12 @@
       document.getElementById('uploadFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
       document.getElementById('clearImageBtn').onclick = resetImagePreview;
 
-      // Sync user text box view safely inside browser memory loops
-      document.getElementById('apiKeyInput').value = apiKey;
+      // Sync user text box view on launch pulling the current real storage value
+      var currentStoredKey = localStorage.getItem("gemini_api_key") || "";
+      document.getElementById('apiKeyInput').value = currentStoredKey;
+      
       document.getElementById('apiKeyInput').oninput = function(e) {
-        var enteredKey = e.target.value.trim();
-        localStorage.setItem("gemini_api_key", enteredKey);
-        apiKey = enteredKey;
-        apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
+        localStorage.setItem("gemini_api_key", e.target.value.trim());
       };
 
       document.getElementById('goalInput').oninput = function(e) {
@@ -1278,7 +1269,7 @@
       document.getElementById('carbsBar').style.width = Math.min((totC / targets.carbs) * 100, 100) + "%";
       document.getElementById('fatLabel').innerText = totF.toFixed(1) + "g / " + targets.fat + "g";
       document.getElementById('fatBar').style.width = Math.min((totF / targets.fat) * 100, 100) + "%";
-      document.getElementById('fiberLabel').innerText = totFib.toFixed(1) + " logged";
+      document.getElementById('fiberLabel').innerText = totFib.toFixed(1) + " g logged";
 
       renderMealsList();
     }
@@ -1520,6 +1511,15 @@
       var userRows = recipeRows.filter(function(r) { return r.name.trim() !== ''; });
       if (userRows.length === 0 && !base64ImagePayload) return;
 
+      // ADJUSTED DYNAMIC API FETCHING: Pulls fresh key straight out of memory context right now
+      var liveContextKey = localStorage.getItem("gemini_api_key") || "";
+      if (!liveContextKey || liveContextKey === "PASTE_YOUR_KEY_HERE" || liveContextKey.length < 10) {
+        alert("Please paste your updated Gemini API Key into the configuration setting block at the bottom of the dashboard.");
+        return;
+      }
+      
+      var dynamicApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + liveContextKey;
+
       var overlay = document.getElementById('aiScanningOverlay');
       overlay.classList.remove('hidden');
 
@@ -1544,7 +1544,7 @@
       }
 
       var xhr = new XMLHttpRequest();
-      xhr.open("POST", apiUrl, true);
+      xhr.open("POST", dynamicApiUrl, true);
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
@@ -1565,7 +1565,7 @@
               alert("Error decoding layout profile: " + err.message);
             }
           } else {
-            alert("Calculation query rejected by gateway endpoint.");
+            alert("Calculation query rejected by gateway endpoint. Check if your pasted API key is still valid inside Google AI Studio.");
           }
         }
       };
