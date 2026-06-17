@@ -934,6 +934,33 @@
     .history-kcal { font-size: 12px; font-weight: 700; color: #14b8a6; }
     
     .hidden { display: none !important; }
+
+    /* Provider Selector Switch Styles */
+    .provider-toggle-container {
+      display: flex;
+      background-color: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 2px;
+      margin-bottom: 10px;
+    }
+    .provider-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 6px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .provider-btn.active {
+      background-color: #14b8a6;
+      color: #020617;
+    }
   </style>
 </head>
 <body>
@@ -1023,14 +1050,32 @@
           <span class="goal-unit">kcal</span>
         </div>
       </div>
-      <input type="range" id="goalRange" min="1000" max="3500" step="50" value="1800" class="range-slider" style="margin-bottom: 12px;">
+      <input type="range" id="goalRange" min="1000" max="3500" step="50" value="1800" class="range-slider" style="margin-bottom: 14px;">
 
-      <div style="margin-top: 10px; background-color: rgba(2,6,23,0.4); border: 1px solid #1e293b; padding: 10px; border-radius: 12px;">
-        <div class="goal-flex-text" style="margin-bottom: 6px;">
-          <label class="goal-input-header" style="color: #94a3b8;">Gemini API Key Setup</label>
-          <span id="keyStateBadge" style="font-size: 9px; font-weight:700; color: #64748b; background-color: #020617; padding: 2px 6px; border-radius: 4px;">Checking...</span>
+      <!-- MULTI-PROVIDER AI SETTINGS ENGINE PANELS -->
+      <div style="background-color: rgba(2,6,23,0.4); border: 1px solid #1e293b; padding: 12px; border-radius: 16px;">
+        <div class="provider-toggle-container">
+          <button id="toggleGeminiBtn" class="provider-btn active">Gemini AI</button>
+          <button id="toggleGroqBtn" class="provider-btn">Groq AI</button>
         </div>
-        <input type="text" id="apiKeyInput" placeholder="AI Studio Key (AIzaSy...)" class="text-input-field" style="padding: 8px 10px; font-size: 12px; font-family: monospace; border-radius: 8px;">
+
+        <!-- Gemini Input Wrapper -->
+        <div id="geminiFieldGroup">
+          <div class="goal-flex-text" style="margin-bottom: 4px;">
+            <label class="goal-input-header" style="color: #94a3b8;">Gemini API Key</label>
+            <span id="geminiStateBadge" style="font-size: 8px; font-weight:700; color: #64748b;">Checking...</span>
+          </div>
+          <input type="text" id="apiKeyInput" placeholder="AI Studio Key (AIzaSy...)" class="text-input-field" style="padding: 6px 10px; font-size: 11px; font-family: monospace; border-radius: 8px;">
+        </div>
+
+        <!-- Groq Input Wrapper -->
+        <div id="groqFieldGroup" class="hidden">
+          <div class="goal-flex-text" style="margin-bottom: 4px;">
+            <label class="goal-input-header" style="color: #94a3b8;">Groq API Key</label>
+            <span id="groqStateBadge" style="font-size: 8px; font-weight:700; color: #64748b;">Checking...</span>
+          </div>
+          <input type="text" id="groqKeyInput" placeholder="Groq Cloud Key (gsk_...)" class="text-input-field" style="padding: 6px 10px; font-size: 11px; font-family: monospace; border-radius: 8px;">
+        </div>
       </div>
     </div>
 
@@ -1055,8 +1100,8 @@
       
       <div id="aiScanningOverlay" class="loading-overlay hidden">
         <div class="spinner"></div>
-        <p class="loading-title">AI Nutrition Estimator</p>
-        <p class="loading-sub">Gemini is parsing ingredients and processing image data...</p>
+        <p class="loading-title" id="loadingModalTitle">AI Nutrition Estimator</p>
+        <p class="loading-sub" id="loadingModalSub">Parsing metrics and compiling recipe records layout data...</p>
       </div>
 
       <div class="modal-header">
@@ -1146,6 +1191,9 @@
     var activeCalculatedResult = null;
     var base64ImagePayload = null;
     var editingMealId = null; 
+    
+    // Active pipeline router config variable
+    var selectedProvider = "gemini"; 
 
     function getLocalDateString(dateObj) {
       var offset = dateObj.getTimezoneOffset();
@@ -1153,16 +1201,48 @@
       return adjustedDate.toISOString().split('T')[0];
     }
 
-    function syncKeyStateBadge(keyValue) {
-      var badge = document.getElementById('keyStateBadge');
-      if (keyValue && keyValue.length >= 10) {
-        badge.innerText = "✓ Active Key Loaded";
-        badge.style.color = "#10b981";
-        badge.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+    function syncKeyStateBadges() {
+      var gemKey = (localStorage.getItem("gemini_api_key") || "").trim();
+      var groKey = (localStorage.getItem("groq_api_key") || "").trim();
+
+      var gemBadge = document.getElementById('geminiStateBadge');
+      if (gemKey.length >= 10) {
+        gemBadge.innerText = "✓ Loaded";
+        gemBadge.style.color = "#10b981";
       } else {
-        badge.innerText = "✕ No Key Set";
-        badge.style.color = "#ef4444";
-        badge.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+        gemBadge.innerText = "✕ Missing";
+        gemBadge.style.color = "#ef4444";
+      }
+
+      var groBadge = document.getElementById('groqStateBadge');
+      if (groKey.length >= 10) {
+        groBadge.innerText = "✓ Loaded";
+        groBadge.style.color = "#10b981";
+      } else {
+        groBadge.innerText = "✕ Missing";
+        groBadge.style.color = "#ef4444";
+      }
+    }
+
+    function setAIProvider(provider) {
+      selectedProvider = provider;
+      localStorage.setItem("selected_ai_provider", provider);
+      
+      var gemBtn = document.getElementById('toggleGeminiBtn');
+      var groBtn = document.getElementById('toggleGroqBtn');
+      var gemGroup = document.getElementById('geminiFieldGroup');
+      var groGroup = document.getElementById('groqFieldGroup');
+
+      if (provider === "gemini") {
+        gemBtn.className = "provider-btn active";
+        groBtn.className = "provider-btn";
+        gemGroup.classList.remove('hidden');
+        groGroup.classList.add('hidden');
+      } else {
+        gemBtn.className = "provider-btn";
+        groBtn.className = "provider-btn active";
+        gemGroup.classList.add('hidden');
+        groGroup.classList.remove('hidden');
       }
     }
 
@@ -1183,16 +1263,33 @@
       document.getElementById('uploadFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
       document.getElementById('clearImageBtn').onclick = resetImagePreview;
 
-      // HARDENED KEY PARSING RETRIEVAL & CLEANING ON LOADING UP
-      var currentStoredKey = (localStorage.getItem("gemini_api_key") || "").trim().replace(/["']/g, "");
-      document.getElementById('apiKeyInput').value = currentStoredKey;
-      syncKeyStateBadge(currentStoredKey);
+      // Handle Switch Toggles Clicking
+      document.getElementById('toggleGeminiBtn').onclick = function() { setAIProvider("gemini"); };
+      document.getElementById('toggleGroqBtn').onclick = function() { setAIProvider("groq"); };
+
+      // Load initial stored parameters configuration
+      var currentGeminiKey = (localStorage.getItem("gemini_api_key") || "").trim().replace(/["']/g, "");
+      var currentGroqKey = (localStorage.getItem("groq_api_key") || "").trim().replace(/["']/g, "");
+      var savedProvider = localStorage.getItem("selected_ai_provider") || "gemini";
+
+      document.getElementById('apiKeyInput').value = currentGeminiKey;
+      document.getElementById('groqKeyInput').value = currentGroqKey;
+      
+      setAIProvider(savedProvider);
+      syncKeyStateBadges();
       
       document.getElementById('apiKeyInput').oninput = function(e) {
-        var cleanedKey = e.target.value.trim().replace(/["']/g, "");
-        localStorage.setItem("gemini_api_key", cleanedKey);
-        e.target.value = cleanedKey; // Keep field sync layout correct
-        syncKeyStateBadge(cleanedKey);
+        var clean = e.target.value.trim().replace(/["']/g, "");
+        localStorage.setItem("gemini_api_key", clean);
+        e.target.value = clean;
+        syncKeyStateBadges();
+      };
+
+      document.getElementById('groqKeyInput').oninput = function(e) {
+        var clean = e.target.value.trim().replace(/["']/g, "");
+        localStorage.setItem("groq_api_key", clean);
+        e.target.value = clean;
+        syncKeyStateBadges();
       };
 
       document.getElementById('goalInput').oninput = function(e) {
@@ -1447,10 +1544,8 @@
               </div>
             </div>
           </div>
-          
         `;
         
-        // Fix string interpolation bugs safely
         d.querySelector('#rowName_').id = "rowName_" + idx;
         d.querySelector('#rowName_' + idx).value = row.name;
         
@@ -1548,95 +1643,123 @@
       var userRows = recipeRows.filter(function(r) { return r.name.trim() !== ''; });
       if (userRows.length === 0 && !base64ImagePayload) return;
 
-      // SECURE FORCE ALIVE CLEAN SYNC RETRIEVAL EACH EXECUTION CLICK
-      var liveContextKey = (localStorage.getItem("gemini_api_key") || "").trim().replace(/["']/g, "");
-      document.getElementById('apiKeyInput').value = liveContextKey;
-      syncKeyStateBadge(liveContextKey);
-
-      if (!liveContextKey || liveContextKey.length < 10) {
-        alert("API Key is missing or invalid! Please check the key configuration field box visible at the bottom of the dashboard.");
-        return;
-      }
-      
-      var dynamicApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + liveContextKey;
-
       var overlay = document.getElementById('aiScanningOverlay');
+      var loadingTitle = document.getElementById('loadingModalTitle');
+      var loadingSub = document.getElementById('loadingModalSub');
+      
       overlay.classList.remove('hidden');
 
-      var sysInstruction = "You are an elite nutrition label analyzer and macro parser. Calculate macro stats for the composite recipe parameters. CRITICAL BEHAVIOR: Compute and provide details for items in ingredients array.";
-      var textPayloadRows = recipeRows.map(function(r, index) {
-        return { arrayIndexPosition: index, name: r.name, grams: r.grams || 100, hasLinkedLabelImage: r.labelImage ? true : false };
-      });
-
-      var partsList = [];
-      partsList.push({ text: 'Meal Structural Heading: "' + mealHeadingName + '". Input rows: ' + JSON.stringify(textPayloadRows) });
-      
-      recipeRows.forEach(function(row, idx) {
-        if (row.labelImage) {
-          partsList.push({ text: 'Label photo for index ' + idx });
-          partsList.push({ inlineData: { mimeType: "image/jpeg", data: row.labelImage } });
-        }
-      });
-
-      if (base64ImagePayload) {
-        partsList.push({ text: "Reference picture:" });
-        partsList.push({ inlineData: { mimeType: "image/jpeg", data: base64ImagePayload } });
-      }
-
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", dynamicApiUrl, true);
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-          overlay.classList.add('hidden');
-          if (xhr.status === 200) {
-            try {
-              var resJson = JSON.parse(xhr.responseText);
-              var payload = JSON.parse(resJson.candidates[0].content.parts[0].text);
-              
-              activeCalculatedResult = payload;
-              document.getElementById('calcCals').innerText = payload.calories;
-              document.getElementById('calcProtein').innerText = payload.protein + "g";
-              document.getElementById('calcCarbs').innerText = payload.carbs + "g";
-              document.getElementById('calcFat').innerText = payload.fat + "g";
-              document.getElementById('calculatedPreviewContainer').classList.remove('hidden');
-              document.getElementById('mainActionBtn').innerText = editingMealId ? "Confirm Changes" : "Commit Entry to Log";
-            } catch (err) {
-              alert("Error parsing AI layout response: " + err.message);
-            }
-          } else {
-            var errorDetails = "Status: " + xhr.status;
-            try {
-               var errObj = JSON.parse(xhr.responseText);
-               if(errObj.error && errObj.error.message) {
-                  errorDetails = errObj.error.message;
-               }
-            } catch(e) {}
-            alert("Google API Request Rejected!\nReason: " + errorDetails);
-          }
-        }
-      };
-
-      xhr.send(JSON.stringify({
-        contents: [{ role: "user", parts: partsList }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              name: { type: "STRING" }, calories: { type: "INTEGER" }, protein: { type: "NUMBER" }, carbs: { type: "NUMBER" }, fat: { type: "NUMBER" }, fiber: { type: "NUMBER" },
-              ingredients: {
-                type: "ARRAY", items: {
-                  type: "OBJECT", properties: { name: { type: "STRING" }, grams: { type: "INTEGER" }, calories: { type: "INTEGER" }, protein: { type: "NUMBER" }, carbs: { type: "NUMBER" }, fat: { type: "NUMBER" } },
-                  required: ["name", "calories", "protein", "carbs", "fat"]
-                }
-              }
-            },
-            required: ["name", "calories", "protein", "carbs", "fat", "ingredients"]
-          }
-        },
-        systemInstruction: { parts: [{ text: sysInstruction }] }
+      var promptPrompt = "Calculate macro details for the composite recipe: Meal Structural Heading: \"" + mealHeadingName + "\". Input rows parameters: " + JSON.stringify(recipeRows.map(function(r, index) {
+        return { arrayIndexPosition: index, name: r.name, grams: r.grams || 100 };
       }));
+
+      // JSON formatting schema structure 
+      var jsonSchemaString = `{
+        "name": "string",
+        "calories": integer,
+        "protein": number,
+        "carbs": number,
+        "fat": number,
+        "fiber": number,
+        "ingredients": [
+          { "name": "string", "grams": integer, "calories": integer, "protein": number, "carbs": number, "fat": number }
+        ]
+      }`;
+
+      var finalPromptText = "You are an elite nutrition label analyzer and macro parser. Calculate total recipe stats. Always reply back using valid JSON layout fitting this exact structure format:\n" + jsonSchemaString + "\n\nUser request data:\n" + promptPrompt;
+
+      // CORE SYSTEM MULTI-ROUTING INFRASTRUCTURE ENGINE
+      if (selectedProvider === "gemini") {
+        loadingTitle.innerText = "Gemini AI Engine";
+        loadingSub.innerText = "Analyzing parameters via Google cloud gateways...";
+
+        var gemKey = (localStorage.getItem("gemini_api_key") || "").trim();
+        if (!gemKey || gemKey.length < 5) {
+          overlay.classList.add('hidden');
+          alert("Gemini key is missing inside setup box!");
+          return;
+        }
+
+        var gemUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gemKey;
+        var partsList = [{ text: finalPromptText }];
+        
+        recipeRows.forEach(function(row, idx) {
+          if (row.labelImage) partsList.push({ inlineData: { mimeType: "image/jpeg", data: row.labelImage } });
+        });
+        if (base64ImagePayload) partsList.push({ inlineData: { mimeType: "image/jpeg", data: base64ImagePayload } });
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", gemUrl, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4) {
+            overlay.classList.add('hidden');
+            if (xhr.status === 200) {
+              try {
+                var res = JSON.parse(xhr.responseText);
+                var rawText = res.candidates[0].content.parts[0].text;
+                // Clean markdown code blocks if the model wrapped it
+                var cleanJson = rawText.replace(/```json/g, "").replace(/
+```/g, "").trim();
+                handleSuccessfulAiResponse(JSON.parse(cleanJson));
+              } catch (e) { alert("Error parsing Gemini layout profile: " + e.message); }
+            } else { alert("Gemini Engine rejected the request. Check your key status."); }
+          }
+        };
+        xhr.send(JSON.stringify({ contents: [{ role: "user", parts: partsList }] }));
+
+      } else {
+        // Groq AI Request Router System Pipeline
+        loadingTitle.innerText = "Groq Llama Engine";
+        loadingSub.innerText = "Blazing fast inference calculation compiling...";
+
+        var groqKey = (localStorage.getItem("groq_api_key") || "").trim();
+        if (!groqKey || groqKey.length < 5) {
+          overlay.classList.add('hidden');
+          alert("Groq Cloud key is missing inside configuration box!");
+          return;
+        }
+
+        var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+        
+        // Note: Llama-3.3-70b is highly capable at parsing nutrition tables via text strings
+        var requestBody = {
+          model: "llama-3.3-70b-specdec",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: "Return data strictly fitting this format parameter structure:\n" + jsonSchemaString },
+            { role: "user", content: finalPromptText }
+          ]
+        };
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", groqUrl, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Authorization", "Bearer " + groqKey);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4) {
+            overlay.classList.add('hidden');
+            if (xhr.status === 200) {
+              try {
+                var res = JSON.parse(xhr.responseText);
+                var parsedPayload = JSON.parse(res.choices[0].message.content);
+                handleSuccessfulAiResponse(parsedPayload);
+              } catch (e) { alert("Error decoding Groq JSON package output profile: " + e.message); }
+            } else { alert("Groq gateway endpoint rejected request:\n" + xhr.responseText); }
+          }
+        };
+        xhr.send(JSON.stringify(requestBody));
+      }
+    }
+
+    function handleSuccessfulAiResponse(payload) {
+      activeCalculatedResult = payload;
+      document.getElementById('calcCals').innerText = payload.calories;
+      document.getElementById('calcProtein').innerText = payload.protein + "g";
+      document.getElementById('calcCarbs').innerText = payload.carbs + "g";
+      document.getElementById('calcFat').innerText = payload.fat + "g";
+      document.getElementById('calculatedPreviewContainer').classList.remove('hidden');
+      document.getElementById('mainActionBtn').innerText = editingMealId ? "Confirm Changes" : "Commit Entry to Log";
     }
 
     function openHistoryModal() {
