@@ -1,442 +1,1904 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Daily Nutrition & Macro Tracker</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    body {
-      background-color: #020617;
-      color: #f8fafc;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 12px;
-    }
-    .dashboard-card {
-      width: 100%;
-      max-width: 420px;
-      background-color: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 24px;
-      padding: 20px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      margin-top: 8px;
-    }
-    .header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    h1 {
-      font-size: 22px;
-      font-weight: 800;
-      color: #ffffff;
-    }
-    .date-control {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background-color: rgba(2, 6, 23, 0.6);
-      padding: 4px;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-    }
-    .date-btn {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      padding: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    #currentDateDisplay {
-      font-size: 12px;
-      font-weight: 600;
-      color: #e2e8f0;
-      min-width: 70px;
-      text-align: center;
-    }
-    .ring-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 12px 0;
-      position: relative;
-    }
-    .svg-ring-box {
-      width: 160px;
-      height: 160px;
-      transform: rotate(-90deg);
-    }
-    .ring-bg {
-      fill: transparent;
-      stroke: #1e293b;
-      stroke-width: 9;
-    }
-    .ring-fill {
-      fill: transparent;
-      stroke: #14b8a6;
-      stroke-width: 10;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 0.3s ease;
-    }
-    .ring-center-text {
-      position: absolute;
-      text-align: center;
-    }
-    #totalCalories {
-      font-size: 32px;
-      font-weight: 800;
-      color: #ffffff;
-    }
-    .kcal-sub {
-      font-size: 9px;
-      color: #94a3b8;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
-    .food-list {
-      margin-bottom: 16px;
-      max-height: 180px;
-      overflow-y: auto;
-      border-top: 1px solid #1e293b;
-      border-bottom: 1px solid #1e293b;
-      padding: 10px 0;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 24px 0;
-      color: #64748b;
-      font-size: 12px;
-    }
-    .meal-item {
-      background-color: rgba(2, 6, 23, 0.4);
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 10px;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .macro-gauge-card {
-      background-color: rgba(2, 6, 23, 0.6);
-      border: 1px solid #1e293b;
-      border-radius: 16px;
-      padding: 14px;
-    }
-    .gauge-wrapper { margin-bottom: 8px; }
-    .gauge-label-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; }
-    .track-bg { width: 100%; height: 6px; background-color: #1e293b; border-radius: 100px; overflow: hidden; }
-    .track-fill { height: 100%; width: 0%; transition: width 0.3s ease; }
-    .fill-p { background-color: #10b981; }
-    .fill-c { background-color: #f59e0b; }
-    .fill-f { background-color: #ef4444; }
-    
-    .goal-settings-panel {
-      margin-top: 14px;
-      border-top: 1px solid #1e293b;
-      padding-top: 14px;
-    }
-    .text-input-field {
-      width: 100%;
-      background-color: #020617;
-      color: #ffffff;
-      font-size: 13px;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 10px 12px;
-      outline: none;
-    }
-    .dashboard-footer-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 16px;
-    }
-    .btn-action-secondary, .btn-action-primary {
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .btn-action-secondary { background-color: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
-    .btn-action-primary { background-color: #14b8a6; color: #020617; }
-    
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(2, 6, 23, 0.85);
-      z-index: 100;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-    .modal-overlay.active { opacity: 1; pointer-events: auto; }
-    .modal-sheet {
-      background-color: #0f172a;
-      width: 100%;
-      max-width: 500px;
-      border-radius: 24px 24px 0 0;
-      padding: 20px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Daily Nutrition & Macro Tracker</title>
+<style>
+/* Global Native Theme Scoping */
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+background-color: #020617;
+color: #f8fafc;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: flex-start;
+padding: 12px;
+}
+
+/* Core Application Wrapper Dashboard */
+.dashboard-card {
+width: 100%;
+max-width: 420px;
+background-color: #0f172a;
+border: 1px solid #1e293b;
+border-radius: 24px;
+padding: 20px;
+box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+position: relative;
+margin-top: 8px;
+}
+
+.header-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+gap: 8px;
+}
+
+.badge {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+padding: 4px 10px;
+background-color: #020617;
+border: 1px solid #334155;
+border-radius: 100px;
+font-size: 9px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+color: #94a3b8;
+margin-bottom: 6px;
+}
+
+.badge-dot {
+width: 6px;
+height: 6px;
+background-color: #10b981;
+border-radius: 50%;
+}
+
+h1 {
+font-size: 22px;
+font-weight: 800;
+color: #ffffff;
+letter-spacing: -0.025em;
+}
+
+/* Target Selector Date Navigator */
+.date-wrapper {
+display: flex;
+flex-direction: column;
+align-items: flex-end;
+flex-shrink: 0;
+}
+
+.date-label {
+font-size: 9px;
+color: #64748b;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+margin-bottom: 4px;
+}
+
+.date-control {
+display: flex;
+align-items: center;
+gap: 4px;
+background-color: rgba(2, 6, 23, 0.6);
+padding: 4px;
+border: 1px solid #1e293b;
+border-radius: 12px;
+}
+
+.date-btn {
+background: none;
+border: none;
+color: #94a3b8;
+padding: 6px;
+cursor: pointer;
+border-radius: 8px;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.date-btn:hover {
+background-color: #1e293b;
+color: #ffffff;
+}
+
+.date-btn svg {
+width: 14px;
+height: 14px;
+}
+
+#currentDateDisplay {
+font-size: 12px;
+font-weight: 600;
+color: #e2e8f0;
+padding: 0 6px;
+min-width: 50px;
+text-align: center;
+}
+
+/* Progress Analytics Ring Geometry */
+.ring-container {
+display: flex;
+justify-content: center;
+align-items: center;
+padding: 12px 0;
+position: relative;
+}
+
+.svg-ring-box {
+width: 160px;
+height: 160px;
+transform: rotate(-90deg);
+}
+
+.ring-bg {
+fill: transparent;
+stroke: #1e293b;
+stroke-width: 9;
+}
+
+.ring-fill {
+fill: transparent;
+stroke: #14b8a6;
+stroke-width: 10;
+stroke-linecap: round;
+transition: stroke-dashoffset 0.5s ease-out;
+}
+
+.ring-center-text {
+position: absolute;
+text-align: center;
+z-index: 10;
+}
+
+#totalCalories {
+font-size: 32px;
+font-weight: 800;
+color: #ffffff;
+line-height: 1;
+}
+
+.kcal-sub {
+font-size: 9px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+color: #94a3b8;
+margin-top: 4px;
+}
+
+.divider {
+height: 1px;
+width: 40px;
+background-color: #1e293b;
+margin: 6px auto;
+}
+
+.rem-title {
+font-size: 10px;
+color: #94a3b8;
+}
+
+#remainingCalories {
+font-size: 13px;
+font-weight: 700;
+color: #2dd4bf;
+margin-top: 1px;
+}
+
+/* Food Entries Feed list */
+.food-list {
+margin-bottom: 16px;
+max-height: 200px;
+overflow-y: auto;
+border-top: 1px solid rgba(30, 41, 59, 0.5);
+border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+padding: 10px 0;
+}
+
+.food-list::-webkit-scrollbar {
+display: none;
+}
+
+.empty-state {
+text-align: center;
+padding: 24px 0;
+color: #64748b;
+font-size: 12px;
+}
+
+.meal-item {
+background-color: rgba(2, 6, 23, 0.4);
+border: 1px solid #1e293b;
+border-radius: 16px;
+margin-bottom: 8px;
+overflow: hidden;
+}
+
+.meal-row-main {
+padding: 12px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+cursor: pointer;
+}
+
+.meal-meta-left {
+display: flex;
+align-items: center;
+gap: 10px;
+flex: 1;
+min-width: 0;
+}
+
+.meal-accent-bar {
+width: 4px;
+height: 24px;
+background-color: #334155;
+border-radius: 10px;
+flex-shrink: 0;
+}
+
+.meal-title-group {
+min-width: 0;
+flex: 1;
+}
+
+.meal-title-text {
+font-size: 13px;
+font-weight: 700;
+color: #ffffff;
+display: flex;
+align-items: center;
+gap: 4px;
+}
+
+.meal-title-text svg {
+width: 12px;
+height: 12px;
+color: #64748b;
+transition: transform 0.2s;
+}
+
+.meal-sub-macros {
+font-size: 10px;
+color: #94a3b8;
+margin-top: 2px;
+}
+
+.meal-meta-right {
+display: flex;
+align-items: center;
+gap: 4px;
+flex-shrink: 0;
+}
+
+.meal-kcal-val {
+font-size: 12px;
+font-weight: 700;
+color: #e2e8f0;
+margin-right: 4px;
+}
+
+.action-icon-btn {
+background: none;
+border: none;
+color: #475569;
+padding: 6px;
+cursor: pointer;
+border-radius: 6px;
+}
+
+.action-icon-btn:hover {
+color: #f43f5e;
+}
+
+.action-icon-btn svg {
+width: 14px;
+height: 14px;
+}
+
+.ingredients-dropdown {
+border-top: 1px solid #020617;
+background-color: rgba(2, 6, 23, 0.8);
+padding: 10px 14px;
+font-size: 11px;
+color: #94a3b8;
+}
+
+.dropdown-header-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-bottom: 1px solid #020617;
+padding-bottom: 6px;
+margin-bottom: 6px;
+}
+
+.dropdown-header-row p {
+font-size: 9px;
+text-transform: uppercase;
+font-weight: 700;
+color: #2dd4bf;
+letter-spacing: 0.05em;
+}
+
+.edit-entry-inline-btn {
+font-size: 10px;
+color: #2dd4bf;
+background-color: rgba(45, 212, 191, 0.1);
+border: none;
+padding: 4px 8px;
+border-radius: 8px;
+font-weight: 700;
+cursor: pointer;
+}
+
+.sub-ing-line {
+display: flex;
+justify-content: space-between;
+padding: 3px 0;
+}
+
+.sub-ing-line .span-right {
+color: #e2e8f0;
+}
+
+/* Analytics Linear Gauge Bars */
+.macro-gauge-card {
+background-color: rgba(2, 6, 23, 0.6);
+border: 1px solid rgba(30, 41, 59, 0.4);
+border-radius: 16px;
+padding: 14px;
+}
+
+.gauge-wrapper {
+margin-bottom: 10px;
+}
+.gauge-wrapper:last-child {
+margin-bottom: 0;
+}
+
+.gauge-label-row {
+display: flex;
+justify-content: space-between;
+font-size: 12px;
+margin-bottom: 4px;
+}
+
+.gauge-title {
+font-weight: 600;
+color: #cbd5e1;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.gauge-dot-p { width: 6px; height: 6px; border-radius: 50%; background-color: #34d399; }
+.gauge-dot-c { width: 6px; height: 6px; border-radius: 50%; background-color: #fbbf24; }
+.gauge-dot-f { width: 6px; height: 6px; border-radius: 50%; background-color: #f87171; }
+
+.gauge-val-p { font-weight: 700; color: #34d399; }
+.gauge-val-c { font-weight: 700; color: #fbbf24; }
+.gauge-val-f { font-weight: 700; color: #f87171; }
+
+.track-bg {
+width: 100%;
+height: 8px;
+background-color: #1e293b;
+border-radius: 100px;
+overflow: hidden;
+}
+
+.track-fill {
+height: 100%;
+border-radius: 100px;
+width: 0%;
+transition: width 0.5s ease-out;
+}
+
+.fill-p { background-color: #10b981; }
+.fill-c { background-color: #f59e0b; }
+.fill-f { background-color: #ef4444; }
+
+.fiber-row {
+border-top: 1px solid rgba(30, 41, 59, 0.5);
+padding-top: 8px;
+margin-top: 8px;
+display: flex;
+justify-content: space-between;
+font-size: 11px;
+color: #94a3b8;
+}
+
+#fiberLabel {
+font-weight: 700;
+color: #818cf8;
+}
+
+/* Calorie Target Configuration Range Controls */
+.goal-settings-panel {
+margin-top: 14px;
+border-top: 1px solid #1e293b;
+padding-top: 14px;
+}
+
+.goal-flex-text {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 8px;
+}
+
+.goal-input-header {
+font-size: 10px;
+font-weight: 600;
+color: #94a3b8;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+
+.goal-input-box {
+display: flex;
+align-items: center;
+gap: 4px;
+}
+
+#goalInput {
+width: 56px;
+background-color: #1e293b;
+color: #ffffff;
+font-size: 12px;
+font-weight: 700;
+padding: 4px 6px;
+border-radius: 6px;
+border: 1px solid #334155;
+text-align: center;
+}
+
+.goal-unit {
+font-size: 11px;
+color: #475569;
+font-weight: 700;
+}
+
+.range-slider {
+width: 100%;
+height: 6px;
+background: #1e293b;
+border-radius: 8px;
+outline: none;
+-webkit-appearance: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 16px;
+height: 16px;
+border-radius: 50%;
+background: #14b8a6;
+cursor: pointer;
+}
+
+/* Primary Dashboard Actions Footer Grid */
+.dashboard-footer-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin-top: 16px;
+}
+
+.btn-action-secondary {
+padding: 12px;
+background-color: #1e293b;
+border: 1px solid #334155;
+color: #e2e8f0;
+border-radius: 12px;
+font-size: 12px;
+font-weight: 600;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
+}
+
+.btn-action-primary {
+padding: 12px;
+background-color: #14b8a6;
+border: none;
+color: #020617;
+border-radius: 12px;
+font-size: 12px;
+font-weight: 700;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
+}
+
+.btn-action-secondary svg, .btn-action-primary svg {
+width: 16px;
+height: 16px;
+}
+
+    /* Modal System Layout (Fully Scoped) */
+    /* Modal System Layout */
+.modal-overlay {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background-color: rgba(2, 6, 23, 0.85);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+z-index: 100;
+display: flex;
+align-items: flex-end;
+justify-content: center;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.2s ease;
+}
+
+@media (min-width: 640px) {
+.modal-overlay {
+align-items: center;
+padding: 16px;
+}
+}
+
+.modal-overlay.active {
+opacity: 1;
+pointer-events: auto;
+}
+
+.modal-sheet {
+background-color: #0f172a;
+border-top: 1px solid #1e293b;
+width: 100%;
+max-width: 500px;
+border-radius: 24px 24px 0 0;
+display: flex;
+flex-direction: column;
+height: 85vh;
+transform: translateY(100%);
+transition: transform 0.25s ease;
+}
+
+@media (min-width: 640px) {
+.modal-sheet {
+border: 1px solid #1e293b;
+border-radius: 24px;
+height: auto;
+max-height: 80vh;
+transform: scale(0.95);
+}
+}
+
+.modal-overlay.active .modal-sheet {
+transform: translateY(0) scale(1);
+}
+
+.modal-header {
+padding: 16px 20px;
+border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.modal-title {
+font-size: 14px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+color: #ffffff;
+}
+
+.modal-close {
+background: none;
+border: none;
+color: #94a3b8;
+cursor: pointer;
+}
+
+.modal-close svg { width: 20px; height: 20px; }
+
+.modal-scroll-area {
+flex: 1;
+overflow-y: auto;
+padding: 20px;
+}
+
+/* Modal Form Element Layout Styles */
+.photo-scan-box {
+background-color: rgba(2, 6, 23, 0.5);
+border: 1px solid #1e293b;
+border-radius: 16px;
+padding: 14px;
+margin-bottom: 16px;
+}
+
+.photo-scan-title {
+font-size: 10px;
+font-weight: 700;
+color: #94a3b8;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-bottom: 8px;
+display: block;
+}
+
+.photo-btn-row {
+display: flex;
+gap: 8px;
+}
+
+.photo-label-trigger {
+flex: 1;
+padding: 10px;
+background-color: #1e293b;
+border: 1px solid #334155;
+border-radius: 12px;
+text-align: center;
+font-size: 12px;
+color: #e2e8f0;
+font-weight: 600;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
+}
+
+.photo-label-trigger svg { width: 16px; height: 16px; }
+
+.img-preview-window {
+position: relative;
+width: 100%;
+height: 96px;
+border-radius: 12px;
+overflow: hidden;
+border: 1px solid #334155;
+background-color: #020617;
+margin-top: 8px;
+}
+
+.img-preview-window img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.clear-img-btn {
+position: absolute;
+top: 6px;
+right: 6px;
+background-color: rgba(2, 6, 23, 0.8);
+border: none;
+color: #94a3b8;
+padding: 4px;
+border-radius: 6px;
+cursor: pointer;
+}
+
+.form-group {
+margin-bottom: 16px;
+}
+
+.form-group label {
+display: block;
+font-size: 10px;
+font-weight: 600;
+color: #94a3b8;
+margin-bottom: 6px;
+text-transform: uppercase;
+}
+
+.text-input-field {
+width: 100%;
+background-color: #020617;
+color: #ffffff;
+font-size: 13px;
+border: 1px solid #1e293b;
+border-radius: 12px;
+padding: 10px 12px;
+outline: none;
+}
+
+.text-input-field:focus {
+border-color: #14b8a6;
+}
+
+/* Ingredient Component Block Configs */
+.ingredients-builder-header {
+display: flex;
+justify-content: space-between;
+font-size: 10px;
+font-weight: 700;
+color: #94a3b8;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-bottom: 8px;
+}
+
+.ingredient-builder-card {
+padding: 12px;
+background-color: rgba(2, 6, 23, 0.5);
+border-radius: 16px;
+border: 1px solid rgba(30, 41, 59, 0.8);
+margin-bottom: 10px;
+position: relative;
+}
+
+.row-delete-btn {
+position: absolute;
+top: 8px;
+right: 8px;
+background: none;
+border: none;
+color: #475569;
+cursor: pointer;
+}
+
+.row-delete-btn:hover { color: #f43f5e; }
+
+.builder-inputs-stack {
+padding-right: 24px;
+}
+
+.builder-row-split {
+display: flex;
+gap: 8px;
+margin-top: 8px;
+}
+
+.w-1-3 { width: 33.33%; }
+.w-2-3 { width: 66.66%; }
+
+.scan-label-embedded-btn {
+width: 100%;
+padding: 9px;
+border-radius: 12px;
+font-size: 10px;
+font-weight: 700;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 4px;
+}
+
+.label-inactive {
+background-color: #020617;
+border: 1px solid #1e293b;
+color: #cbd5e1;
+}
+
+.label-active {
+background-color: rgba(16, 185, 129, 0.1);
+border: 1px solid rgba(16, 185, 129, 0.4);
+color: #34d399;
+}
+
+.linked-badge-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+background-color: rgba(2, 6, 23, 0.9);
+padding: 4px 10px;
+border-radius: 8px;
+border: 1px solid #1e293b;
+margin-top: 6px;
+font-size: 9px;
+}
+
+.linked-status {
+color: #34d399;
+font-weight: 600;
+}
+
+.remove-link-text {
+color: #64748b;
+background: none;
+border: none;
+text-decoration: underline;
+cursor: pointer;
+}
+
+/* Structured Breakdown Block Preview */
+.breakdown-preview-panel {
+background-color: rgba(2, 6, 23, 0.6);
+border: 1px solid rgba(20, 184, 166, 0.2);
+border-radius: 16px;
+padding: 14px;
+margin-top: 12px;
+}
+
+.breakdown-tag {
+font-size: 9px;
+font-weight: 700;
+color: #2dd4bf;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-bottom: 8px;
+}
+
+.preview-grid {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 6px;
+}
+
+.preview-box {
+background-color: #020617;
+padding: 8px;
+border-radius: 10px;
+text-align: center;
+}
+
+.preview-box p:first-child { font-size: 8px; color: #94a3b8; margin-bottom: 2px;}
+.preview-box p:last-child { font-size: 13px; font-weight: 700; }
+
+.btn-add-component {
+width: 100%;
+padding: 10px;
+background-color: #020617;
+border: 1px dashed #1e293b;
+color: #94a3b8;
+font-size: 12px;
+font-weight: 600;
+border-radius: 12px;
+cursor: pointer;
+margin-top: 4px;
+}
+
+.btn-add-component:hover {
+border-color: rgba(20, 184, 166, 0.5);
+color: #ffffff;
+}
+
+.modal-footer {
+padding: 12px 16px;
+border-top: 1px solid rgba(30, 41, 59, 0.6);
+display: flex;
+gap: 10px;
+}
+
+.modal-footer button { flex: 1; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btn-modal-cancel { background-color: #1e293b; border: none; color: #94a3b8; }
+.btn-modal-submit { background-color: #14b8a6; border: none; color: #020617; }
+
+/* Scan Box Dynamic Loading Screen overlay */
+.loading-overlay {
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background-color: rgba(2, 6, 23, 0.95);
+z-index: 200;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 24px;
+border-radius: 24px;
+}
+
+.spinner {
+width: 48px;
+height: 48px;
+border: 4px solid rgba(20, 184, 166, 0.2);
+border-top-color: #14b8a6;
+border-radius: 50%;
+animation: spin 1s linear infinite;
+margin-bottom: 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-title { font-size: 14px; font-weight: 700; color: #ffffff; }
+.loading-sub { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 6px; max-width: 240px; }
+
+.history-item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+background-color: rgba(2, 6, 23, 0.6);
+padding: 14px;
+border-radius: 16px;
+border: 1px solid #1e293b;
+margin-bottom: 8px;
+cursor: pointer;
+}
+
+.history-item:hover { border-color: #14b8a6; }
+.history-date { font-size: 12px; font-weight: 700; color: #ffffff; }
+.history-kcal { font-size: 12px; font-weight: 700; color: #14b8a6; }
+
+.hidden { display: none !important; }
+
+/* Provider Selector Switch Styles */
+.provider-toggle-container {
+display: flex;
+background-color: #020617;
+border: 1px solid #1e293b;
+border-radius: 8px;
+padding: 2px;
+margin-bottom: 10px;
+}
+.provider-btn {
+flex: 1;
+background: none;
+border: none;
+color: #64748b;
+font-size: 10px;
+font-weight: 700;
+padding: 6px;
+cursor: pointer;
+border-radius: 6px;
+text-transform: uppercase;
+transition: all 0.2s;
+}
+.provider-btn.active {
+background-color: #14b8a6;
+color: #020617;
+}
+</style>
 </head>
 <body>
 
-  <div class="dashboard-card">
-    <div class="header-row">
-      <h1>Macro Tracker</h1>
-      <div class="date-control">
-        <button id="prevDateBtn" class="date-btn">◀</button>
-        <span id="currentDateDisplay">Today</span>
-        <button id="nextDateBtn" class="date-btn">▶</button>
-      </div>
-    </div>
+<div class="dashboard-card" id="mainCard">
 
-    <div class="ring-container">
-      <svg class="svg-ring-box">
-        <circle cx="80" cy="80" r="70" class="ring-bg" />
-        <circle cx="80" cy="80" r="70" class="ring-fill" id="calorieProgressBar" stroke-dasharray="440" stroke-dashoffset="440" />
-      </svg>
-      <div class="ring-center-text">
-        <span id="totalCalories">0</span>
-        <div class="kcal-sub">kcal logged</div>
-      </div>
-    </div>
+<div class="header-row">
+<div>
+<div class="badge">
+<span class="badge-dot"></span>
+<span>Local Storage Active</span>
+</div>
+<h1>Macro Tracker</h1>
+</div>
 
-    <div class="food-list" id="mealsListContainer"></div>
+<div class="date-wrapper">
+<span class="date-label">Select Date</span>
+<div class="date-control">
+<button id="prevDateBtn" class="date-btn" title="Previous Day">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.75 19.5 8.25 12l7.5-7.5" />
+</svg>
+</button>
+<span id="currentDateDisplay">Today</span>
+<button id="nextDateBtn" class="date-btn" title="Next Day">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+</svg>
+</button>
+</div>
+</div>
+</div>
 
-    <div class="macro-gauge-card">
-      <div style="font-size:12px; display:flex; justify-content:space-between; margin-bottom:10px;">
-        <span>Daily Goal:</span>
-        <input type="number" id="goalInput" value="1800" style="width:60px; background:none; border:none; color:#fff; font-weight:700; text-align:right;">
-      </div>
+<div class="ring-container">
+<svg class="svg-ring-box">
+<circle cx="80" cy="80" r="70" class="ring-bg" />
+<circle cx="80" cy="80" r="70" class="ring-fill" id="calorieProgressBar" stroke-dasharray="440" stroke-dashoffset="440" />
+</svg>
+
+<div class="ring-center-text">
+<span id="totalCalories">0</span>
+<span class="kcal-sub">kcal consumed</span>
+<div class="divider"></div>
+<span class="rem-title" id="remainingStatusTitle">Remaining</span>
+<div id="remainingCalories">0 kcal</div>
+</div>
+</div>
+
+<div class="food-list" id="mealsListContainer"></div>
+
+<div class="macro-gauge-card">
+<div class="gauge-wrapper">
+<div class="gauge-label-row">
+<span class="gauge-title"><span class="gauge-dot-p"></span>Protein</span>
+<span class="gauge-val-p" id="proteinLabel">0g / 0g</span>
+</div>
+<div class="track-bg"><div class="track-fill fill-p" id="proteinBar"></div></div>
+</div>
+
+<div class="gauge-wrapper">
+<div class="gauge-label-row">
+<span class="gauge-title"><span class="gauge-dot-c"></span>Carbs</span>
+<span class="gauge-val-c" id="carbsLabel">0g / 0g</span>
+</div>
+<div class="track-bg"><div class="track-fill fill-c" id="carbsBar"></div></div>
+</div>
+
+<div class="gauge-wrapper">
+<div class="gauge-label-row">
+<span class="gauge-title"><span class="gauge-dot-f"></span>Fat</span>
+<span class="gauge-val-f" id="fatLabel">0g / 0g</span>
+</div>
+<div class="track-bg"><div class="track-fill fill-f" id="fatBar"></div></div>
+</div>
+
+<div class="fiber-row">
+<span>Daily Dietary Fiber Goal</span>
+<span id="fiberLabel">0g</span>
+</div>
+</div>
+
+<div class="goal-settings-panel">
+<div class="goal-flex-text">
+<label class="goal-input-header">Set Calorie Target</label>
+<div class="goal-input-box">
+<input type="number" id="goalInput" value="1800">
+<span class="goal-unit">kcal</span>
+</div>
+</div>
+<input type="range" id="goalRange" min="1000" max="3500" step="50" value="1800" class="range-slider" style="margin-bottom: 14px;">
+
+      <!-- MULTI-PROVIDER AI SETTINGS ENGINE PANELS -->
+<div style="background-color: rgba(2,6,23,0.4); border: 1px solid #1e293b; padding: 12px; border-radius: 16px;">
+<div class="provider-toggle-container">
+<button id="toggleGeminiBtn" class="provider-btn active">Gemini AI</button>
+<button id="toggleGroqBtn" class="provider-btn">Groq AI</button>
+</div>
+
+        <!-- Gemini Input Wrapper -->
+<div id="geminiFieldGroup">
+<div class="goal-flex-text" style="margin-bottom: 4px;">
+<label class="goal-input-header" style="color: #94a3b8;">Gemini API Key</label>
+<span id="geminiStateBadge" style="font-size: 8px; font-weight:700; color: #64748b;">Checking...</span>
+</div>
+<input type="text" id="apiKeyInput" placeholder="AI Studio Key (AIzaSy...)" class="text-input-field" style="padding: 6px 10px; font-size: 11px; font-family: monospace; border-radius: 8px;">
+</div>
+
+        <!-- Groq Input Wrapper -->
+<div id="groqFieldGroup" class="hidden">
+<div class="goal-flex-text" style="margin-bottom: 4px;">
+<label class="goal-input-header" style="color: #94a3b8;">Groq API Key</label>
+<span id="groqStateBadge" style="font-size: 8px; font-weight:700; color: #64748b;">Checking...</span>
+</div>
+<input type="text" id="groqKeyInput" placeholder="Groq Cloud Key (gsk_...)" class="text-input-field" style="padding: 6px 10px; font-size: 11px; font-family: monospace; border-radius: 8px;">
+</div>
+</div>
+</div>
+
+<div class="dashboard-footer-grid">
+<button id="openHistoryBtn" class="btn-action-secondary">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+</svg>
+History Vault
+</button>
+<button id="openAddModalBtn" class="btn-action-primary">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.5v15m7.5-7.5h-15" />
+</svg>
+Add Item
+</button>
+</div>
+</div>
+
+<div id="addMealModal" class="modal-overlay">
+<div class="modal-sheet">
+
+<div id="aiScanningOverlay" class="loading-overlay hidden">
+<div class="spinner"></div>
+<p class="loading-title" id="loadingModalTitle">AI Nutrition Estimator</p>
+<p class="loading-sub" id="loadingModalSub">Parsing metrics and compiling recipe records layout data...</p>
+</div>
+
+<div class="modal-header">
+<h3 class="modal-title" id="modalTitleDisplay">Build Custom Meal</h3>
+<button id="closeAddModalBtn" class="modal-close">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+</button>
+</div>
+
+<div class="modal-scroll-area">
+<div class="photo-scan-box">
+<span class="photo-scan-title">Overall Meal Reference Photo (Optional)</span>
+<div class="photo-btn-row">
+<label class="photo-label-trigger">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /></svg>
+Snap Food
+<input type="file" id="cameraFileInput" accept="image/*" capture="environment" class="hidden">
+</label>
+<label class="photo-label-trigger">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5z" /></svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5" /></svg>
+Upload Image
+<input type="file" id="uploadFileInput" accept="image/*" class="hidden">
+</label>
+</div>
+<div id="imagePreviewContainer" class="img-preview-window hidden">
+<img id="imagePreview" alt="Food Setup Preview">
+<button id="clearImageBtn" class="clear-img-btn">
+<svg style="width:14px; height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+</button>
+</div>
+</div>
+
+<div class="form-group">
+<label>Meal Designation Title</label>
+<input type="text" id="recipeMealName" placeholder="e.g. High-Protein Bowl" class="text-input-field">
+</div>
+
+<div>
+<div class="ingredients-builder-header">
+<span>Ingredients Configuration List</span>
+<span>Actions</span>
+</div>
+
+<div id="ingredientRowsContainer"></div>
+
+<button id="addIngredientRowBtn" class="btn-add-component">
++ Add New Recipe Component Row
+</button>
+</div>
+
+<div id="calculatedPreviewContainer" class="breakdown-preview-panel hidden">
+<p class="breakdown-tag">Calculated Breakdown Preview</p>
+<div class="preview-grid">
+<div class="preview-box"><p>Calories</p><p id="calcCals" style="color:#ffffff;">0</p></div>
+<div class="preview-box"><p style="color:#34d399;">Protein</p><p id="calcProtein" style="color:#34d399;">0g</p></div>
+<div class="preview-box"><p style="color:#fbbf24;">Carbs</p><p id="calcCarbs" style="color:#fbbf24;">0g</p></div>
+<div class="preview-box"><p style="color:#f87171;">Fat</p><p id="calcFat" style="color:#f87171;">0g</p></div>
+</div>
+</div>
+</div>
+
+      <div class="modal-footer">
+        <button id="cancelAddModalBtn" class="btn-modal-cancel">Cancel</button>
+        <button id="mainActionBtn" class="btn-modal-submit">Calculate Macros</button>
+      <div class="modal-header" style="border-top: 1px solid rgba(30, 41, 59, 0.6); border-bottom: none;">
+        <div class="modal-footer" style="width: 100%; padding: 0; border: none;">
+          <button id="cancelAddModalBtn" class="btn-modal-cancel">Cancel</button>
+          <button id="mainActionBtn" class="btn-modal-submit">Calculate Macros</button>
+        </div>
+</div>
+</div>
+</div>
+
+<div id="historyModal" class="modal-overlay">
+<div class="modal-sheet" style="max-width:380px; height:70vh;">
+<div class="modal-header">
+<h3 class="modal-title">Logs Vault</h3>
+<button id="closeHistoryModalBtn" class="modal-close">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+</button>
+</div>
+<div class="modal-scroll-area" id="historyListContainer"></div>
+</div>
+</div>
+
+<script>
+var currentSelectedDate = getLocalDateString(new Date());
+var meals = [];
+var calorieGoal = 1800;
+var expandedMealIds = new Set();
+var recipeRows = [];
+var activeCalculatedResult = null;
+var base64ImagePayload = null;
+var editingMealId = null; 
+    
+    // Active pipeline router config variable
+var selectedProvider = "gemini"; 
+
+function getLocalDateString(dateObj) {
+var offset = dateObj.getTimezoneOffset();
+var adjustedDate = new Date(dateObj.getTime() - (offset * 60 * 1000));
+return adjustedDate.toISOString().split('T')[0];
+}
+
+function syncKeyStateBadges() {
+var gemKey = (localStorage.getItem("gemini_api_key") || "").trim();
+var groKey = (localStorage.getItem("groq_api_key") || "").trim();
+
+var gemBadge = document.getElementById('geminiStateBadge');
+      if (gemKey.length >= 10) {
+        gemBadge.innerText = "✓ Loaded";
+        gemBadge.style.color = "#10b981";
+      } else {
+        gemBadge.innerText = "✕ Missing";
+        gemBadge.style.color = "#ef4444";
+      if (gemBadge) {
+        if (gemKey.length >= 10) {
+          gemBadge.innerText = "✓ Loaded";
+          gemBadge.style.color = "#10b981";
+        } else {
+          gemBadge.innerText = "✕ Missing";
+          gemBadge.style.color = "#ef4444";
+        }
+}
+
+var groBadge = document.getElementById('groqStateBadge');
+      if (groKey.length >= 10) {
+        groBadge.innerText = "✓ Loaded";
+        groBadge.style.color = "#10b981";
+      } else {
+        groBadge.innerText = "✕ Missing";
+        groBadge.style.color = "#ef4444";
+      if (groBadge) {
+        if (groKey.length >= 10) {
+          groBadge.innerText = "✓ Loaded";
+          groBadge.style.color = "#10b981";
+        } else {
+          groBadge.innerText = "✕ Missing";
+          groBadge.style.color = "#ef4444";
+        }
+}
+}
+
+function setAIProvider(provider) {
+      selectedProvider = provider;
+      localStorage.setItem("selected_ai_provider", provider);
+      selectedProvider = provider || "gemini";
+      localStorage.setItem("selected_ai_provider", selectedProvider);
+
+var gemBtn = document.getElementById('toggleGeminiBtn');
+var groBtn = document.getElementById('toggleGroqBtn');
+var gemGroup = document.getElementById('geminiFieldGroup');
+var groGroup = document.getElementById('groqFieldGroup');
+
+      if (provider === "gemini") {
+        gemBtn.className = "provider-btn active";
+        groBtn.className = "provider-btn";
+        gemGroup.classList.remove('hidden');
+        groGroup.classList.add('hidden');
+      if (selectedProvider === "gemini") {
+        if (gemBtn) gemBtn.className = "provider-btn active";
+        if (groBtn) groBtn.className = "provider-btn";
+        if (gemGroup) gemGroup.classList.remove('hidden');
+        if (groGroup) groGroup.classList.add('hidden');
+} else {
+        gemBtn.className = "provider-btn";
+        groBtn.className = "provider-btn active";
+        gemGroup.classList.add('hidden');
+        groGroup.classList.remove('hidden');
+        if (gemBtn) gemBtn.className = "provider-btn";
+        if (groBtn) groBtn.className = "provider-btn active";
+        if (gemGroup) gemGroup.classList.add('hidden');
+        if (groGroup) groGroup.classList.remove('hidden');
+}
+}
+
+function initApplication() {
+      loadDateLog(currentSelectedDate);
       
-      <div class="gauge-wrapper">
-        <div class="gauge-label-row"><span>Protein</span><span id="proteinLabel">0g</span></div>
-        <div class="track-bg"><div class="track-fill fill-p" id="proteinBar"></div></div>
-      </div>
-      <div class="gauge-wrapper">
-        <div class="gauge-label-row"><span>Carbs</span><span id="carbsLabel">0g</span></div>
-        <div class="track-bg"><div class="track-fill fill-c" id="carbsBar"></div></div>
-      </div>
-      <div class="gauge-wrapper">
-        <div class="gauge-label-row"><span>Fat</span><span id="fatLabel">0g</span></div>
-        <div class="track-bg"><div class="track-fill fill-f" id="fatBar"></div></div>
-      </div>
-    </div>
+      // 1. Setup Event Listeners Safe Attachments
+document.getElementById('prevDateBtn').onclick = function() { navigateDate(-1); };
+document.getElementById('nextDateBtn').onclick = function() { navigateDate(1); };
+document.getElementById('openAddModalBtn').onclick = function() { showAddMealModal(); };
+document.getElementById('closeAddModalBtn').onclick = closeAddMealModal;
+document.getElementById('cancelAddModalBtn').onclick = closeAddMealModal;
+document.getElementById('addIngredientRowBtn').onclick = addIngredientRow;
+document.getElementById('mainActionBtn').onclick = processAndCalculateRecipe;
+document.getElementById('openHistoryBtn').onclick = openHistoryModal;
+document.getElementById('closeHistoryModalBtn').onclick = closeHistoryModal;
 
-    <div class="goal-settings-panel">
-      <label style="font-size: 10px; color: #94a3b8; display:block; margin-bottom:4px;">GEMINI API KEY</label>
-      <input type="text" id="apiKeyInput" placeholder="Paste Gemini key here" class="text-input-field">
-    </div>
+      document.getElementById('cameraFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
+      document.getElementById('uploadFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
+      document.getElementById('cameraFileInput').onchange = function(e) { if(e.target.files.length) handleImageIngestion(e.target.files[0]); };
+      document.getElementById('uploadFileInput').onchange = function(e) { if(e.target.files.length) handleImageIngestion(e.target.files[0]); };
+document.getElementById('clearImageBtn').onclick = resetImagePreview;
 
-    <div class="dashboard-footer-grid">
-      <button id="openHistoryBtn" class="btn-action-secondary">History Vault</button>
-      <button id="openAddModalBtn" class="btn-action-primary">+ Add Item</button>
-    </div>
-  </div>
+      // Handle Switch Toggles Clicking
+document.getElementById('toggleGeminiBtn').onclick = function() { setAIProvider("gemini"); };
+document.getElementById('toggleGroqBtn').onclick = function() { setAIProvider("groq"); };
 
-  <div id="addMealModal" class="modal-overlay">
-    <div class="modal-sheet">
-      <h3 style="margin-bottom:12px; color:#fff;">Add Quick Meal</h3>
-      <input type="text" id="recipeMealName" placeholder="Meal Name (e.g. Rice & Chicken)" class="text-input-field" style="margin-bottom:8px;">
-      <input type="number" id="recipeCalories" placeholder="Calories" class="text-input-field" style="margin-bottom:12px;">
-      <div style="display:flex; gap:10px;">
-        <button id="cancelAddModalBtn" class="btn-action-secondary" style="flex:1;">Cancel</button>
-        <button id="mainActionBtn" class="btn-action-primary" style="flex:1;">Save Item</button>
-      </div>
-    </div>
-  </div>
+      // Load initial stored parameters configuration
+      var currentGeminiKey = (localStorage.getItem("gemini_api_key") || "").trim().replace(/["']/g, "");
+      var currentGroqKey = (localStorage.getItem("groq_api_key") || "").trim().replace(/["']/g, "");
+      // 2. Safe Extraction from Storage without crash vulnerabilities
+      var rawGemini = localStorage.getItem("gemini_api_key") || "";
+      var currentGeminiKey = typeof rawGemini === "string" ? rawGemini.trim().replace(/["']/g, "") : "";
+      
+      var rawGroq = localStorage.getItem("groq_api_key") || "";
+      var currentGroqKey = typeof rawGroq === "string" ? rawGroq.trim().replace(/["']/g, "") : "";
+      
+var savedProvider = localStorage.getItem("selected_ai_provider") || "gemini";
 
-  <div id="historyModal" class="modal-overlay">
-    <div class="modal-sheet">
-      <h3 style="margin-bottom:12px; color:#fff;">Logs Vault</h3>
-      <div id="historyListContainer" style="max-height:200px; overflow-y:auto; margin-bottom:12px;"></div>
-      <button id="closeHistoryModalBtn" class="btn-action-secondary" style="width:100%;">Close</button>
-    </div>
-  </div>
+document.getElementById('apiKeyInput').value = currentGeminiKey;
+document.getElementById('groqKeyInput').value = currentGroqKey;
 
-  <script>
-    var currentSelectedDate = new Date().toISOString().split('T')[0];
-    var meals = [];
-    var calorieGoal = 1800;
+setAIProvider(savedProvider);
+syncKeyStateBadges();
 
-    function initApplication() {
-      document.getElementById('prevDateBtn').onclick = function() { changeDate(-1); };
-      document.getElementById('nextDateBtn').onclick = function() { changeDate(1); };
-      document.getElementById('openAddModalBtn').onclick = function() { document.getElementById('addMealModal').classList.add('active'); };
-      document.getElementById('cancelAddModalBtn').onclick = function() { document.getElementById('addMealModal').classList.remove('active'); };
-      document.getElementById('closeHistoryModalBtn').onclick = function() { document.getElementById('historyModal').classList.remove('active'); };
-      document.getElementById('openHistoryBtn').onclick = openHistoryModal;
-      document.getElementById('mainActionBtn').onclick = saveQuickMeal;
+document.getElementById('apiKeyInput').oninput = function(e) {
+var clean = e.target.value.trim().replace(/["']/g, "");
+localStorage.setItem("gemini_api_key", clean);
+        e.target.value = clean;
+syncKeyStateBadges();
+};
 
-      // Sync Key
-      var savedKey = localStorage.getItem("gemini_api_key") || "";
-      document.getElementById('apiKeyInput').value = savedKey;
-      document.getElementById('apiKeyInput').oninput = function(e) {
-        localStorage.setItem("gemini_api_key", e.target.value.trim());
-      };
+document.getElementById('groqKeyInput').oninput = function(e) {
+var clean = e.target.value.trim().replace(/["']/g, "");
+localStorage.setItem("groq_api_key", clean);
+        e.target.value = clean;
+syncKeyStateBadges();
+};
 
-      // Calorie Targets setup
-      document.getElementById('goalInput').oninput = function(e) {
+document.getElementById('goalInput').oninput = function(e) {
+calorieGoal = Math.max(500, parseInt(e.target.value) || 1800);
+document.getElementById('goalRange').value = calorieGoal;
+saveCurrentLog();
+updateDOM();
+};
+      
+document.getElementById('goalRange').oninput = function(e) {
+        calorieGoal = parseInt(e.target.value);
         calorieGoal = parseInt(e.target.value) || 1800;
-        localStorage.setItem("calorie_goal", calorieGoal);
-        updateDOM();
-      };
-      calorieGoal = parseInt(localStorage.getItem("calorie_goal")) || 1800;
-      document.getElementById('goalInput').value = calorieGoal;
+document.getElementById('goalInput').value = calorieGoal;
+saveCurrentLog();
+updateDOM();
+};
 
-      loadLog();
-    }
+      // 3. Kickoff application load state
+      loadDateLog(currentSelectedDate);
+}
 
-    function changeDate(days) {
-      var d = new Date(currentSelectedDate);
-      d.setDate(d.getDate() + days);
-      currentSelectedDate = d.toISOString().split('T')[0];
-      loadLog();
-    }
+function navigateDate(daysOffset) {
+var parts = currentSelectedDate.split('-');
+var d = new Date(parts[0], parts[1] - 1, parts[2]);
+d.setDate(d.getDate() + daysOffset);
+currentSelectedDate = getLocalDateString(d);
+loadDateLog(currentSelectedDate);
+}
 
-    function loadLog() {
-      document.getElementById('currentDateDisplay').innerText = currentSelectedDate;
-      
-      // Smart Recovery Check: Tries old structural naming format OR new simplified naming layout
-      var saved = localStorage.getItem("nutrition_log_" + currentSelectedDate) || localStorage.getItem("meals_" + currentSelectedDate);
-      if (saved) {
+function loadDateLog(dateStr) {
+var backup = localStorage.getItem("nutrition_log_" + dateStr);
+if (backup) {
+        var parsed = JSON.parse(backup);
+        meals = parsed.meals || [];
+        calorieGoal = parsed.calorieGoal || 1800;
         try {
-          var parsed = JSON.parse(saved);
-          meals = Array.isArray(parsed) ? parsed : (parsed.meals || []);
-        } catch(e) { meals = []; }
-      } else {
-        meals = [];
+          var parsed = JSON.parse(backup);
+          meals = parsed.meals || [];
+          calorieGoal = parsed.calorieGoal || 1800;
+        } catch(e) {
+          meals = [];
+          calorieGoal = 1800;
+        }
+} else {
+meals = [];
+}
+document.getElementById('goalInput').value = calorieGoal;
+document.getElementById('goalRange').value = calorieGoal;
+updateDOM();
+}
+
+function saveCurrentLog() {
+localStorage.setItem("nutrition_log_" + currentSelectedDate, JSON.stringify({ meals: meals, calorieGoal: calorieGoal }));
+      var historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      var historyIdx = [];
+      try {
+        historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      } catch(e) { historyIdx = []; }
+      
+      if (!Array.isArray(historyIdx)) historyIdx = [];
+if (!historyIdx.includes(currentSelectedDate)) {
+historyIdx.push(currentSelectedDate);
+localStorage.setItem('nutrition_history_index', JSON.stringify(historyIdx));
+}
+}
+
+function getMacroTargets() {
+return {
+protein: Math.round((calorieGoal * 0.30) / 4),
+carbs: Math.round((calorieGoal * 0.45) / 4),
+fat: Math.round((calorieGoal * 0.25) / 9),
+fiber: Math.round((calorieGoal / 1000) * 14)
+};
+}
+
+function updateDOM() {
+var display = document.getElementById('currentDateDisplay');
+if (currentSelectedDate === getLocalDateString(new Date())) {
+display.innerText = "Today";
+} else {
+var parts = currentSelectedDate.split('-');
+var d = new Date(parts[0], parts[1] - 1, parts[2]);
+display.innerText = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+var totCals = 0, totP = 0, totC = 0, totF = 0, totFib = 0;
+meals.forEach(function(m) {
+        totCals += m.calories; totP += m.protein; totC += m.carbs; totF += m.fat; totFib += m.fiber;
+        totCals += (Number(m.calories) || 0); 
+        totP += (Number(m.protein) || 0); 
+        totC += (Number(m.carbs) || 0); 
+        totF += (Number(m.fat) || 0); 
+        totFib += (Number(m.fiber) || 0);
+});
+
+document.getElementById('totalCalories').innerText = Math.round(totCals).toLocaleString();
+var remaining = calorieGoal - totCals;
+var remText = document.getElementById('remainingCalories');
+if (remaining < 0) {
+document.getElementById('remainingStatusTitle').innerText = "Over Target";
+remText.innerText = Math.abs(Math.round(remaining)) + " kcal";
+remText.style.color = "#f87171";
+} else {
+document.getElementById('remainingStatusTitle').innerText = "Remaining";
+remText.innerText = Math.round(remaining) + " kcal";
+remText.style.color = "#2dd4bf";
+}
+
+var circlePercent = Math.min((totCals / calorieGoal) * 100, 100);
+var strokeOffset = 440 - (440 * circlePercent) / 100;
+document.getElementById('calorieProgressBar').style.strokeDashoffset = strokeOffset;
+
+var targets = getMacroTargets();
+document.getElementById('proteinLabel').innerText = totP.toFixed(1) + "g / " + targets.protein + "g";
+document.getElementById('proteinBar').style.width = Math.min((totP / targets.protein) * 100, 100) + "%";
+document.getElementById('carbsLabel').innerText = totC.toFixed(1) + "g / " + targets.carbs + "g";
+document.getElementById('carbsBar').style.width = Math.min((totC / targets.carbs) * 100, 100) + "%";
+document.getElementById('fatLabel').innerText = totF.toFixed(1) + "g / " + targets.fat + "g";
+document.getElementById('fatBar').style.width = Math.min((totF / targets.fat) * 100, 100) + "%";
+document.getElementById('fiberLabel').innerText = totFib.toFixed(1) + " g logged";
+
+renderMealsList();
+}
+
+function renderMealsList() {
+var container = document.getElementById('mealsListContainer');
+container.innerHTML = '';
+if (meals.length === 0) {
+container.innerHTML = '<div class="empty-state">No entries recorded for this date.</div>';
+return;
+}
+
+meals.forEach(function(meal) {
+var isExp = expandedMealIds.has(meal.id);
+var div = document.createElement('div');
+div.className = "meal-item";
+
+var subIngredientsHTML = '';
+if (isExp && meal.ingredients && meal.ingredients.length > 0) {
+subIngredientsHTML = `
+           <div class="ingredients-dropdown">
+             <div class="dropdown-header-row">
+               <p>Ingredient Components Breakdown</p>
+               <button onclick="window.startEditMeal(${meal.id})" class="edit-entry-inline-btn">Edit Entry</button>
+             </div>
+             <div>
+               ${meal.ingredients.map(function(i) {
+                 return `
+                 <div class="sub-ing-line">
+                   <span style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${i.name} ${i.grams ? `<span style="color:#475569; font-size:9px;">(${i.grams}g)</span>` : ''}</span>
+                   <span class="span-right">${i.calories} kcal <span style="color:#475569; margin-left:4px;">P:${i.protein}g C:${i.carbs}g</span></span>
+                 </div>`;
+               }).join('')}
+             </div>
+           </div>
+         `;
+}
+
+div.innerHTML = `
+         <div class="meal-row-main">
+           <div class="meal-meta-left" onclick="window.toggleMealExpand(${meal.id})">
+             <div class="meal-accent-bar" style="background-color: ${isExp ? '#14b8a6' : '#334155'}"></div>
+             <div class="meal-title-group">
+               <p class="meal-title-text">
+                 ${meal.name}
+                 <svg style="transform: ${isExp ? 'rotate(180deg)' : 'rotate(0)'};" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+               </p>
+               <p class="meal-sub-macros">P: ${meal.protein}g · C: ${meal.carbs}g · F: ${meal.fat}g</p>
+             </div>
+           </div>
+           <div class="meal-meta-right">
+             <span class="meal-kcal-val">${meal.calories} kcal</span>
+             <button onclick="window.deleteMeal(${meal.id})" class="action-icon-btn">
+               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+             </button>
+           </div>
+         </div>
+         ${subIngredientsHTML}
+       `;
+container.appendChild(div);
+});
+}
+
+window.toggleMealExpand = function(id) {
+if (expandedMealIds.has(id)) expandedMealIds.delete(id);
+else expandedMealIds.add(id);
+renderMealsList();
+};
+
+window.deleteMeal = function(id) {
+meals = meals.filter(function(m) { return m.id !== id; });
+saveCurrentLog();
+updateDOM();
+};
+
+function showAddMealModal() {
+editingMealId = null;
+recipeRows = [{ name: '', grams: '', labelImage: null }];
+activeCalculatedResult = null;
+resetImagePreview();
+document.getElementById('modalTitleDisplay').innerText = "Build Custom Meal";
+document.getElementById('recipeMealName').value = '';
+document.getElementById('calculatedPreviewContainer').classList.add('hidden');
+document.getElementById('mainActionBtn').innerText = "Calculate Macros";
+renderIngredientRows();
+document.getElementById('addMealModal').classList.add('active');
+}
+
+window.startEditMeal = function(id) {
+var mealToEdit = meals.find(function(m) { return m.id === id; });
+if (!mealToEdit) return;
+
+editingMealId = id;
+document.getElementById('modalTitleDisplay').innerText = "Modify: " + mealToEdit.name;
+document.getElementById('recipeMealName').value = mealToEdit.name;
+
+recipeRows = (mealToEdit.ingredients || []).map(function(ing) {
+return {
+name: ing.name,
+grams: ing.grams || '',
+labelImage: ing.labelImage || null 
+};
+});
+
+if (recipeRows.length === 0) {
+recipeRows.push({ name: '', grams: '', labelImage: null });
+}
+
+activeCalculatedResult = null;
+resetImagePreview();
+document.getElementById('calculatedPreviewContainer').classList.add('hidden');
+document.getElementById('mainActionBtn').innerText = "Save Changes";
+renderIngredientRows();
+document.getElementById('addMealModal').classList.add('active');
+};
+
+function closeAddMealModal() {
+document.getElementById('addMealModal').classList.remove('active');
+}
+
+function addIngredientRow() {
+recipeRows.push({ name: '', grams: '', labelImage: null });
+renderIngredientRows();
+}
+
+window.deleteIngredientRow = function(idx) {
+recipeRows.splice(idx, 1);
+      if(recipeRows.length === 0) {
+        recipeRows.push({ name: '', grams: '', labelImage: null });
       }
-      updateDOM();
-    }
+renderIngredientRows();
+};
 
-    function updateDOM() {
-      var container = document.getElementById('mealsListContainer');
-      container.innerHTML = '';
-      
-      var totalCals = 0, p = 0, c = 0, f = 0;
-      
-      if (!meals.length) {
-        container.innerHTML = '<div class="empty-state">No items logged today.</div>';
-      } else {
-        meals.forEach(function(m, index) {
-          totalCals += (Number(m.calories) || 0);
-          p += (Number(m.protein) || 0);
-          c += (Number(m.carbs) || 0);
-          f += (Number(m.fat) || 0);
+function renderIngredientRows() {
+var container = document.getElementById('ingredientRowsContainer');
+container.innerHTML = '';
+recipeRows.forEach(function(row, idx) {
+var d = document.createElement('div');
+d.className = "ingredient-builder-card";
+var hasLabel = row.labelImage ? true : false;
 
-          var item = document.createElement('div');
-          item.className = "meal-item";
-          item.innerHTML = `
-            <div>
-              <p style="font-size:13px; font-weight:700; color:#fff;">${m.name}</p>
-              <p style="font-size:10px; color:#94a3b8;">P: ${m.protein || 0}g | C: ${m.carbs || 0}g | F: ${m.fat || 0}g</p>
-            </div>
-            <span style="font-size:12px; font-weight:700; color:#e2e8f0;">${m.calories} kcal</span>
-          `;
-          container.appendChild(item);
-        });
+d.innerHTML = `
+         <button onclick="window.deleteIngredientRow(${idx})" class="row-delete-btn" title="Delete Component">
+           <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+         </button>
+         
+         <div class="builder-inputs-stack">
+            <input type="text" id="rowName_" value="" placeholder="Ingredient Name (Rice, Chicken, Oats)" class="text-input-field" style="padding: 8px 10px; font-size:12px; margin-bottom: 6px;">
+            <input type="text" id="rowName_${idx}" value="${row.name || ''}" placeholder="Ingredient Name (Rice, Chicken, Oats)" class="text-input-field" style="padding: 8px 10px; font-size:12px; margin-bottom: 6px;">
+           <div class="builder-row-split">
+             <div class="w-1-3">
+                <input type="number" id="rowGrams_" value="" placeholder="Grams" class="text-input-field" style="padding: 8px 4px; text-align:center; font-size:12px;">
+                <input type="number" id="rowGrams_${idx}" value="${row.grams || ''}" placeholder="Grams" class="text-input-field" style="padding: 8px 4px; text-align:center; font-size:12px;">
+             </div>
+             <div class="w-2-3">
+                <label class="scan-label-embedded-btn ">
+                <label class="scan-label-embedded-btn ${hasLabel ? 'label-active' : 'label-inactive'}">
+                 <svg style="width:12px; height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-width="2"/></svg>
+                  Scan Macro Label
+                  <input type="file" id="rowLabelFile_" accept="image/*" class="hidden">
+                  <span>${hasLabel ? 'Label Attached ✓' : 'Scan Macro Label'}</span>
+                  <input type="file" id="rowLabelFile_${idx}" accept="image/*" class="hidden">
+               </label>
+             </div>
+           </div>
+         </div>
+       `;
+
+        d.querySelector('#rowName_').id = "rowName_" + idx;
+        d.querySelector('#rowName_' + idx).value = row.name;
+        
+        d.querySelector('#rowGrams_').id = "rowGrams_" + idx;
+        d.querySelector('#rowGrams_' + idx).value = row.grams;
+        
+        d.querySelector('#rowLabelFile_').id = "rowLabelFile_" + idx;
+        
+        var labelBtn = d.querySelector('.scan-label-embedded-btn');
+if(hasLabel) {
+           labelBtn.className = "scan-label-embedded-btn label-active";
+           labelBtn.innerHTML = labelBtn.innerHTML.replace("Scan Macro Label", "Label Attached ✓");
+           
+var badgeRow = document.createElement('div');
+badgeRow.className = "linked-badge-row";
+           badgeRow.innerHTML = `<span class="linked-status">✓ Nutritional data screenshot active</span><button onclick="window.clearRowLabel(${idx})" class="remove-link-text">Remove</button>`;
+           badgeRow.innerHTML = `<span class="linked-status">✓ Nutritional data screenshot active</span><button onclick="window.clearRowLabel(${idx}); event.preventDefault();" class="remove-link-text">Remove</button>`;
+d.appendChild(badgeRow);
+        } else {
+           labelBtn.className = "scan-label-embedded-btn label-inactive";
+}
+
+container.appendChild(d);
+
+document.getElementById("rowName_" + idx).oninput = function(e) { recipeRows[idx].name = e.target.value; };
+document.getElementById("rowGrams_" + idx).oninput = function(e) { recipeRows[idx].grams = e.target.value; };
+        document.getElementById("rowLabelFile_" + idx).onchange = function(e) { handleRowLabelIngestion(e.target.files[0], idx); };
+        document.getElementById("rowLabelFile_" + idx).onchange = function(e) { if(e.target.files.length) handleRowLabelIngestion(e.target.files[0], idx); };
+});
+}
+
+function handleRowLabelIngestion(file, idx) {
+if (!file) return;
+var reader = new FileReader();
+reader.onload = function(e) {
+recipeRows[idx].labelImage = e.target.result.split(',')[1];
+renderIngredientRows();
+};
+reader.readAsDataURL(file);
+}
+
+window.clearRowLabel = function(idx) {
+recipeRows[idx].labelImage = null;
+renderIngredientRows();
+};
+
+function handleImageIngestion(file) {
+if (!file) return;
+var reader = new FileReader();
+reader.onload = function(e) {
+base64ImagePayload = e.target.result.split(',')[1];
+document.getElementById('imagePreview').src = e.target.result;
+document.getElementById('imagePreviewContainer').classList.remove('hidden');
+};
+reader.readAsDataURL(file);
+}
+
+function resetImagePreview() {
+base64ImagePayload = null;
+document.getElementById('imagePreview').src = '';
+document.getElementById('imagePreviewContainer').classList.add('hidden');
+document.getElementById('cameraFileInput').value = '';
+document.getElementById('uploadFileInput').value = '';
+}
+
+function processAndCalculateRecipe() {
+if (activeCalculatedResult) {
+var structuralEntry = {
+id: editingMealId ? editingMealId : Date.now(),
+name: activeCalculatedResult.name || "Custom meal entry",
+calories: Math.round(activeCalculatedResult.calories) || 0,
+protein: parseFloat(activeCalculatedResult.protein || 0),
+carbs: parseFloat(activeCalculatedResult.carbs || 0),
+fat: parseFloat(activeCalculatedResult.fat || 0),
+fiber: parseFloat(activeCalculatedResult.fiber || 0),
+ingredients: activeCalculatedResult.ingredients.map(function(ing, idx) {
+return Object.assign({}, ing, {
+grams: recipeRows[idx] ? recipeRows[idx].grams : ing.grams,
+labelImage: recipeRows[idx] ? recipeRows[idx].labelImage : null
+});
+})
+};
+
+if (editingMealId) {
+meals = meals.map(function(m) { return m.id === editingMealId ? structuralEntry : m; });
+} else {
+meals.push(structuralEntry);
+}
+
+saveCurrentLog();
+updateDOM();
+closeAddMealModal();
+return;
+}
+
+var mealHeadingName = document.getElementById('recipeMealName').value.trim() || "Logged Custom Entry";
+var userRows = recipeRows.filter(function(r) { return r.name.trim() !== ''; });
+      if (userRows.length === 0 && !base64ImagePayload) return;
+      if (userRows.length === 0 && !base64ImagePayload) {
+        alert("Please add at least one ingredient name or attach an image before calculating.");
+        return;
       }
 
-      document.getElementById('totalCalories').innerText = totalCals;
-      var percent = Math.min((totalCals / calorieGoal) * 100, 100);
-      document.getElementById('calorieProgressBar').style.strokeDashoffset = 440 - (440 * percent) / 100;
+var overlay = document.getElementById('aiScanningOverlay');
+var loadingTitle = document.getElementById('loadingModalTitle');
+var loadingSub = document.getElementById('loadingModalSub');
 
-      // Render out Targets
-      var targetP = Math.round((calorieGoal * 0.3) / 4);
-      var targetC = Math.round((calorieGoal * 0.45) / 4);
-      var targetF = Math.round((calorieGoal * 0.25) / 9);
+overlay.classList.remove('hidden');
 
-      document.getElementById('proteinLabel').innerText = p + "g / " + targetP + "g";
-      document.getElementById('proteinBar').style.width = Math.min((p / targetP) * 100, 100) + "%";
+      var promptPrompt = "Calculate macro details for the composite recipe: Meal Structural Heading: \"" + mealHeadingName + "\". Input rows parameters: " + JSON.stringify(recipeRows.map(function(r, index) {
+      var promptPrompt = "Calculate macro details for the composite recipe: Meal Structural Heading: \"" + mealHeadingName + "\". Input rows parameters: " + JSON.stringify(userRows.map(function(r, index) {
+return { arrayIndexPosition: index, name: r.name, grams: r.grams || 100 };
+}));
+
+      // JSON formatting schema structure 
+var jsonSchemaString = `{
+       "name": "string",
+       "calories": integer,
+       "protein": number,
+       "carbs": number,
+       "fat": number,
+       "fiber": number,
+       "ingredients": [
+         { "name": "string", "grams": integer, "calories": integer, "protein": number, "carbs": number, "fat": number }
+       ]
+     }`;
+
+var finalPromptText = "You are an elite nutrition label analyzer and macro parser. Calculate total recipe stats. Always reply back using valid JSON layout fitting this exact structure format:\n" + jsonSchemaString + "\n\nUser request data:\n" + promptPrompt;
+
+      // CORE SYSTEM MULTI-ROUTING INFRASTRUCTURE ENGINE
+if (selectedProvider === "gemini") {
+loadingTitle.innerText = "Gemini AI Engine";
+loadingSub.innerText = "Analyzing parameters via Google cloud gateways...";
+
+var gemKey = (localStorage.getItem("gemini_api_key") || "").trim();
+if (!gemKey || gemKey.length < 5) {
+overlay.classList.add('hidden');
+          alert("Gemini key is missing inside setup box!");
+          alert("Gemini key is missing inside configuration box!");
+return;
+}
+
+var gemUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gemKey;
+var partsList = [{ text: finalPromptText }];
+
+        recipeRows.forEach(function(row, idx) {
+        recipeRows.forEach(function(row) {
+if (row.labelImage) partsList.push({ inlineData: { mimeType: "image/jpeg", data: row.labelImage } });
+});
+if (base64ImagePayload) partsList.push({ inlineData: { mimeType: "image/jpeg", data: base64ImagePayload } });
+
+var xhr = new XMLHttpRequest();
+xhr.open("POST", gemUrl, true);
+xhr.setRequestHeader("Content-Type", "application/json");
+xhr.onreadystatechange = function () {
+if (xhr.readyState === 4) {
+overlay.classList.add('hidden');
+if (xhr.status === 200) {
+try {
+var res = JSON.parse(xhr.responseText);
+var rawText = res.candidates[0].content.parts[0].text;
+                // Clean markdown code blocks if the model wrapped it
+                var cleanJson = rawText.replace(/```json/g, "").replace(/
+```/g, "").trim();
+                var cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+handleSuccessfulAiResponse(JSON.parse(cleanJson));
+} catch (e) { alert("Error parsing Gemini layout profile: " + e.message); }
+} else { alert("Gemini Engine rejected the request. Check your key status."); }
+}
+};
+xhr.send(JSON.stringify({ contents: [{ role: "user", parts: partsList }] }));
+
+} else {
+        // Groq AI Request Router System Pipeline
+loadingTitle.innerText = "Groq Llama Engine";
+loadingSub.innerText = "Blazing fast inference calculation compiling...";
+
+var groqKey = (localStorage.getItem("groq_api_key") || "").trim();
+if (!groqKey || groqKey.length < 5) {
+overlay.classList.add('hidden');
+alert("Groq Cloud key is missing inside configuration box!");
+return;
+}
+
+var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+
+var requestBody = {
+model: "llama-3.3-70b-specdec",
+response_format: { type: "json_object" },
+messages: [
+{ role: "system", content: "Return data strictly fitting this format parameter structure:\n" + jsonSchemaString },
+{ role: "user", content: finalPromptText }
+]
+};
+
+var xhr = new XMLHttpRequest();
+xhr.open("POST", groqUrl, true);
+xhr.setRequestHeader("Content-Type", "application/json");
+xhr.setRequestHeader("Authorization", "Bearer " + groqKey);
+xhr.onreadystatechange = function () {
+if (xhr.readyState === 4) {
+overlay.classList.add('hidden');
+if (xhr.status === 200) {
+try {
+var res = JSON.parse(xhr.responseText);
+var parsedPayload = JSON.parse(res.choices[0].message.content);
+handleSuccessfulAiResponse(parsedPayload);
+} catch (e) { alert("Error decoding Groq JSON package output profile: " + e.message); }
+} else { alert("Groq gateway endpoint rejected request:\n" + xhr.responseText); }
+}
+};
+xhr.send(JSON.stringify(requestBody));
+}
+}
+
+function handleSuccessfulAiResponse(payload) {
+activeCalculatedResult = payload;
+document.getElementById('calcCals').innerText = payload.calories;
+document.getElementById('calcProtein').innerText = payload.protein + "g";
+document.getElementById('calcCarbs').innerText = payload.carbs + "g";
+document.getElementById('calcFat').innerText = payload.fat + "g";
+document.getElementById('calculatedPreviewContainer').classList.remove('hidden');
+document.getElementById('mainActionBtn').innerText = editingMealId ? "Confirm Changes" : "Commit Entry to Log";
+}
+
+function openHistoryModal() {
+var container = document.getElementById('historyListContainer');
+container.innerHTML = '';
+
+      var historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      var historyIdx = [];
+      try {
+        historyIdx = JSON.parse(localStorage.getItem('nutrition_history_index') || "[]");
+      } catch(e) { historyIdx = []; }
       
-      document.getElementById('carbsLabel').innerText = c + "g / " + targetC + "g";
-      document.getElementById('carbsBar').style.width = Math.min((c / targetC) * 100, 100) + "%";
-      
-      document.getElementById('fatLabel').innerText = f + "g / " + targetF + "g";
-      document.getElementById('fatBar').style.width = Math.min((f / targetF) * 100, 100) + "%";
-    }
+      if(!Array.isArray(historyIdx)) historyIdx = [];
+var todayStr = getLocalDateString(new Date());
+if (!historyIdx.includes(todayStr)) {
+historyIdx.push(todayStr);
+}
+historyIdx.sort(function(a, b) { return b.localeCompare(a); });
 
-    function saveQuickMeal() {
-      var name = document.getElementById('recipeMealName').value.trim() || "Quick Entry";
-      var cals = parseInt(document.getElementById('recipeCalories').value) || 0;
-      
-      // auto-estimate basic macros if adding manually
-      var calculatedP = Math.round((cals * 0.25) / 4);
-      var calculatedC = Math.round((cals * 0.50) / 4);
-      var calculatedF = Math.round((cals * 0.25) / 9);
+historyIdx.forEach(function(dStr) {
+        var data = JSON.parse(localStorage.getItem("nutrition_log_" + dStr) || '{"meals":[]}');
+var dayCals = 0;
+        if (data.meals) data.meals.forEach(function(m) { dayCals += m.calories; });
+        var localLog = localStorage.getItem("nutrition_log_" + dStr);
+        if (localLog) {
+          try {
+            var data = JSON.parse(localLog);
+            if (data.meals) data.meals.forEach(function(m) { dayCals += (Number(m.calories) || 0); });
+          } catch(e){}
+        }
 
-      meals.push({
-        id: Date.now(),
-        name: name,
-        calories: cals,
-        protein: calculatedP,
-        carbs: calculatedC,
-        fat: calculatedF
-      });
+var row = document.createElement('div');
+row.className = "history-item";
+row.onclick = function() {
+currentSelectedDate = dStr;
+loadDateLog(currentSelectedDate);
+closeHistoryModal();
+};
+row.innerHTML = `
+         <span class="history-date">${dStr}</span>
+         <span class="history-kcal">${Math.round(dayCals)} kcal</span>
+       `;
+container.appendChild(row);
+});
 
-      localStorage.setItem("nutrition_log_" + currentSelectedDate, JSON.stringify(meals));
-      
-      var index = JSON.parse(localStorage.getItem("history_index") || "[]");
-      if(!index.includes(currentSelectedDate)) {
-        index.push(currentSelectedDate);
-        localStorage.setItem("history_index", JSON.stringify(index));
-      }
+document.getElementById('historyModal').classList.add('active');
+}
 
-      document.getElementById('addMealModal').classList.remove('active');
-      document.getElementById('recipeMealName').value = '';
-      document.getElementById('recipeCalories').value = '';
-      updateDOM();
-    }
+function closeHistoryModal() {
+document.getElementById('historyModal').classList.remove('active');
+}
 
-    function openHistoryModal() {
-      var container = document.getElementById('historyListContainer');
-      container.innerHTML = '';
-      var index = JSON.parse(localStorage.getItem("history_index") || "[]");
-      
-      if(!index.length) {
-        container.innerHTML = '<div class="empty-state">No historical log entries found.</div>';
-      }
-      
-      index.forEach(function(dateStr) {
-        var div = document.createElement('div');
-        div.style.padding = "10px";
-        div.style.borderBottom = "1px solid #1e293b";
-        div.style.cursor = "pointer";
-        div.style.color = "#fff";
-        div.innerText = dateStr;
-        div.onclick = function() {
-          currentSelectedDate = dateStr;
-          loadLog();
-          document.getElementById('historyModal').classList.remove('active');
-        };
-        container.appendChild(div);
-      });
-      document.getElementById('historyModal').classList.add('active');
-    }
-
-    window.onload = initApplication;
-  </script>
+    // Assign window load execution completely free of sequential racing conditions
+window.onload = initApplication;
+</script>
 </body>
 </html>
