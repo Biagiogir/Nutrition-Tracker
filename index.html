@@ -1135,9 +1135,11 @@
   </div>
 
   <script>
-    // OPTION 1 FORCE-OVERWRITE IMPLEMENTATION:
-    // This wipes any dead keys currently lingering in your browser cache on page start
-    localStorage.setItem("gemini_api_key", "AQ.Ab8RN6J7xeOythLxiqRAb2Ui7EbjvZgfWJ4mvH3-r6ckQSXQCg");
+    // SECURE LOCAL MEMORY PARSING SEGMENT:
+    // This safely initializes storage without committing hardcoded production keys to public GitHub history loops.
+    if (!localStorage.getItem("gemini_api_key")) {
+      localStorage.setItem("gemini_api_key", "PASTE_YOUR_KEY_HERE");
+    }
 
     var apiKey = localStorage.getItem("gemini_api_key") || ""; 
     var apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
@@ -1174,7 +1176,7 @@
       document.getElementById('uploadFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
       document.getElementById('clearImageBtn').onclick = resetImagePreview;
 
-      // Sync the interface field text box with your current key state
+      // Sync user text box view safely inside browser memory loops
       document.getElementById('apiKeyInput').value = apiKey;
       document.getElementById('apiKeyInput').oninput = function(e) {
         var enteredKey = e.target.value.trim();
@@ -1276,7 +1278,7 @@
       document.getElementById('carbsBar').style.width = Math.min((totC / targets.carbs) * 100, 100) + "%";
       document.getElementById('fatLabel').innerText = totF.toFixed(1) + "g / " + targets.fat + "g";
       document.getElementById('fatBar').style.width = Math.min((totF / targets.fat) * 100, 100) + "%";
-      document.getElementById('fiberLabel').innerText = totFib.toFixed(1) + "g logged";
+      document.getElementById('fiberLabel').innerText = totFib.toFixed(1) + " logged";
 
       renderMealsList();
     }
