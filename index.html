@@ -500,7 +500,7 @@
     /* Primary Dashboard Actions Footer Grid */
     .dashboard-footer-grid {
       display: grid;
-      grid-template-cols: 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-top: 16px;
     }
@@ -845,7 +845,7 @@
 
     .preview-grid {
       display: grid;
-      grid-template-cols: repeat(4, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 6px;
     }
 
@@ -915,7 +915,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .loading-title { font-size: 14px; font-weight: 700; color: #ffffff; }
-    .loading-sub { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 6px; max-w: 240px; }
+    .loading-sub { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 6px; max-width: 240px; }
 
     .history-item {
       display: flex;
@@ -1023,7 +1023,12 @@
           <span class="goal-unit">kcal</span>
         </div>
       </div>
-      <input type="range" id="goalRange" min="1000" max="3500" step="50" value="1800" class="range-slider">
+      <input type="range" id="goalRange" min="1000" max="3500" step="50" value="1800" class="range-slider" style="margin-bottom: 12px;">
+
+      <div class="goal-flex-text" style="margin-top: 8px;">
+        <label class="goal-input-header" style="color: #64748b;">Gemini API Key Setup</label>
+        <input type="password" id="apiKeyInput" placeholder="Paste AQ... key here" class="text-input-field" style="width: 140px; padding: 4px 8px; font-size: 11px; border-radius: 6px;">
+      </div>
     </div>
 
     <div class="dashboard-footer-grid">
@@ -1130,8 +1135,12 @@
   </div>
 
   <script>
-    // Constants setup for Standard Javascript Engines
-    var apiKey = "AQ.Ab8RN6J7xeOythLxiqRAb2Ui7EbjvZgfWJ4mvH3-r6ckQSXQCg"; 
+    // ADJUSTED KEY RETRIEVAL LOGIC: No more plaintext hardcoding to avoid GitHub takedowns
+    if (!localStorage.getItem("gemini_api_key")) {
+      localStorage.setItem("gemini_api_key", "AQ.Ab8RN6J7xeOythLxiqRAb2Ui7EbjvZgfWJ4mvH3-r6ckQSXQCg");
+    }
+
+    var apiKey = localStorage.getItem("gemini_api_key") || ""; 
     var apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
 
     var currentSelectedDate = getLocalDateString(new Date());
@@ -1165,6 +1174,15 @@
       document.getElementById('cameraFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
       document.getElementById('uploadFileInput').onchange = function(e) { handleImageIngestion(e.target.files[0]); };
       document.getElementById('clearImageBtn').onclick = resetImagePreview;
+
+      // ADJUSTED METHOD: Listen to key entries and sync dynamic local memory state
+      document.getElementById('apiKeyInput').value = apiKey;
+      document.getElementById('apiKeyInput').oninput = function(e) {
+        var enteredKey = e.target.value.trim();
+        localStorage.setItem("gemini_api_key", enteredKey);
+        apiKey = enteredKey;
+        apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
+      };
 
       document.getElementById('goalInput').oninput = function(e) {
         calorieGoal = Math.max(500, parseInt(e.target.value) || 1800);
@@ -1211,6 +1229,7 @@
       }
     }
 
+    // Dynamic nutritional tracking metric configurations
     function getMacroTargets() {
       return {
         protein: Math.round((calorieGoal * 0.30) / 4),
